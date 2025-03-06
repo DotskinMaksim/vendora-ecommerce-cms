@@ -115,7 +115,7 @@ model User {
   email                      String    @unique
   email_verified             Boolean   @default(false)
   password_hash              String
-  status_id                   Int
+  status_id                  Int?
   status_set_at              DateTime?
   status_set_until           DateTime?
   status_set_by              Int?
@@ -132,7 +132,7 @@ model User {
   phone_verified             Boolean   @default(false)
 
   /// Связь на статус
-  status Status @relation(fields: [status_id], references: [id], onDelete: Restrict)
+  status Status? @relation(fields: [status_id], references: [id], onDelete: Restrict)
 
   /// Самоссылка: кто установил статус?
   statusSetByUser User? @relation("UserStatusSetBy", fields: [status_set_by], references: [id], onDelete: SetNull)
