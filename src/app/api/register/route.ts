@@ -9,12 +9,17 @@ export async function POST(req: Request) {
         if (!email || !username || !password) {
             return NextResponse.json({ error: "Missing fields" }, { status: 400 })
         }
-        // Проверим, нет ли такого email
-        const existingUser = await prisma.user.findUnique({
-            where: { email },
+        const existingUser = await prisma.user.findFirst({
+            where: {
+                OR: [{ email }, { username }]
+            }
         })
+
         if (existingUser) {
-            return NextResponse.json({ error: "Email already in use" }, { status: 400 })
+            return NextResponse.json(
+                { error: existingUser.email === email ? "Email already in use" : "Username already in use" },
+                { status: 400 }
+            )
         }
         // Хешируем пароль (например, 10 раундов)
         const hashed = await bcrypt.hash(password, 10)
