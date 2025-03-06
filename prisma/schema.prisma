@@ -60,6 +60,7 @@ model migrations {
 /// Модель сущностей
 /// -----------------------
 model Entity {
+  @@map("entities")
   id              Int             @id @default(autoincrement())
   name            String          @unique
   statuses        Status[]
@@ -71,10 +72,11 @@ model Entity {
 /// Модель статусов
 /// -----------------------
 model Status {
+  @@map("statuses")
   id          Int     @id @default(autoincrement())
-  entityId    Int
-  entity      Entity  @relation(fields: [entityId], references: [id], onDelete: Restrict)
-  name        String  @unique
+  entity_id   Int
+  entity      Entity  @relation(fields: [entity_id], references: [id], onDelete: Restrict)
+  name        String
   color       String  @default("#000000")
   description String?
 
@@ -93,25 +95,27 @@ model Status {
 /// Таблица "дефолтных" статусов
 /// -----------------------
 model DefaultStatus {
-  entityId Int
-  statusId Int
+  @@map("default_statuses")
+  entity_id Int
+  status_id Int
 
-  entity Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  status Status @relation(fields: [statusId], references: [id], onDelete: Cascade)
+  entity Entity @relation(fields: [entity_id], references: [id], onDelete: Cascade)
+  status Status @relation(fields: [status_id], references: [id], onDelete: Cascade)
 
-  @@id([entityId, statusId])
+  @@id([entity_id, status_id])
 }
 
 /// -----------------------
 /// Модель пользователей
 /// -----------------------
 model User {
+  @@map("users")
   id                         Int       @id @default(autoincrement())
   username                   String    @unique
   email                      String    @unique
   email_verified             Boolean   @default(false)
   password_hash              String
-  statusId                   Int
+  status_id                   Int
   status_set_at              DateTime?
   status_set_until           DateTime?
   status_set_by              Int?
@@ -128,7 +132,7 @@ model User {
   phone_verified             Boolean   @default(false)
 
   /// Связь на статус
-  status Status @relation(fields: [statusId], references: [id], onDelete: Restrict)
+  status Status @relation(fields: [status_id], references: [id], onDelete: Restrict)
 
   /// Самоссылка: кто установил статус?
   statusSetByUser User? @relation("UserStatusSetBy", fields: [status_set_by], references: [id], onDelete: SetNull)
@@ -152,7 +156,7 @@ model User {
   settingsSet         Setting[]             @relation("SettingLastSetBy")
   promotionUsers      PromotionUser[]
 
-  @@index([statusId])
+  @@index([status_id])
   @@index([phone_number])
 }
 
@@ -160,6 +164,8 @@ model User {
 /// Роли пользователей (user_roles)
 /// -----------------------
 model UserRole {
+  @@map("user_roles")
+
   user_id Int
   role_id Int
 
@@ -173,6 +179,7 @@ model UserRole {
 /// История паролей (user_password_history)
 /// -----------------------
 model UserPasswordHistory {
+  @@map("user_password_history")
   id                Int      @id @default(autoincrement())
   user_id           Int
   old_password_hash String
@@ -186,6 +193,8 @@ model UserPasswordHistory {
 /// Роли (roles)
 /// -----------------------
 model Role {
+  @@map("roles")
+
   id                Int  @id @default(autoincrement())
   name_tx_id        Int
   description_tx_id Int?
@@ -198,6 +207,8 @@ model Role {
 /// Разрешения (permissions)
 /// -----------------------
 model Permission {
+  @@map("permissions")
+
   id                Int  @id @default(autoincrement())
   name_tx_id        Int
   description_tx_id Int?
@@ -209,6 +220,8 @@ model Permission {
 /// Связка ролей и разрешений (role_permissions)
 /// -----------------------
 model RolePermission {
+  @@map("role_permissions")
+
   role_id       Int
   permission_id Int
 
@@ -222,6 +235,7 @@ model RolePermission {
 /// Товары (products)
 /// -----------------------
 model Product {
+  @@map("products")
   id                Int                     @id @default(autoincrement())
   slug              String                  @unique
   price             Decimal                 @db.Decimal(10, 2)
@@ -255,6 +269,8 @@ model Product {
 /// Изображения товаров (product_images)
 /// -----------------------
 model ProductImage {
+  @@map("product_images")
+
   id         Int                            @id @default(autoincrement())
   product_id Int
   image_url  String
@@ -269,6 +285,8 @@ model ProductImage {
 /// Отзывы (product_reviews)
 /// -----------------------
 model ProductReview {
+  @@map("product_reviews")
+
   id         Int      @id @default(autoincrement())
   product_id Int
   user_id    Int
@@ -288,6 +306,8 @@ model ProductReview {
 /// Теги (tags)
 /// -----------------------
 model Tag {
+  @@map("tags")
+
   id         Int    @id @default(autoincrement())
   name_tx_id Int
   slug       String @unique
@@ -299,6 +319,9 @@ model Tag {
 /// Связка товары - теги (product_tags)
 /// -----------------------
 model ProductTag {
+
+  @@map("product_tags")
+
   product_id Int
   tag_id     Int
 
@@ -312,6 +335,8 @@ model ProductTag {
 /// Категории (categories)
 /// -----------------------
 model Category {
+  @@map("categories")
+
   id              Int     @id @default(autoincrement())
   slug            String  @unique
   parent_id       Int?
@@ -333,6 +358,8 @@ model Category {
 /// Связка товары - категории (product_categories)
 /// -----------------------
 model ProductCategory {
+  @@map("product_categories")
+
   product_id  Int
   category_id Int
 
@@ -346,6 +373,8 @@ model ProductCategory {
 /// Атрибуты (attributes)
 /// -----------------------
 model Attribute {
+  @@map("attributes")
+
   id         Int                        @id @default(autoincrement())
   name_tx_id Int
   value_type enum_attributes_value_type
@@ -359,6 +388,8 @@ model Attribute {
 /// Варианты товаров (product_variants)
 /// -----------------------
 model ProductVariant {
+  @@map("product_variants")
+
   id                 Int      @id @default(autoincrement())
   product_id         Int
   available_quantity Decimal? @default("0") @db.Decimal(10, 3)
@@ -375,6 +406,8 @@ model ProductVariant {
 /// Значения атрибутов (product_attributes)
 /// -----------------------
 model ProductAttribute {
+  @@map("product_attributes")
+
   id                        Int      @id @default(autoincrement())
   product_variant_id        Int
   attribute_id              Int
@@ -392,6 +425,8 @@ model ProductAttribute {
 /// Склады (warehouses)
 /// -----------------------
 model Warehouse {
+  @@map("warehouses")
+
   id           Int      @id @default(autoincrement())
   name         String   @unique
   address_id   Int
@@ -410,6 +445,8 @@ model Warehouse {
 /// Наличие на складах (warehouse_stock)
 /// -----------------------
 model WarehouseStock {
+  @@map("warehouse_stock")
+
   id                 Int      @id @default(autoincrement())
   warehouse_id       Int
   product_variant_id Int
@@ -425,6 +462,8 @@ model WarehouseStock {
 /// Заказы (orders)
 /// -----------------------
 model Order {
+  @@map("orders")
+
   id                 Int      @id @default(autoincrement())
   user_id            Int?
   total_amount       Decimal  @db.Decimal(10, 2)
@@ -446,6 +485,8 @@ model Order {
 /// Применённые промо (promotion_usages)
 /// -----------------------
 model PromotionUsage {
+  @@map("promotion_usages")
+
   order_id     Int
   promotion_id Int
 
@@ -459,6 +500,8 @@ model PromotionUsage {
 /// Транзакции (transactions)
 /// -----------------------
 model Transaction {
+  @@map("transactions")
+
   id                Int      @id @default(autoincrement())
   order_id          Int
   payment_method_id Int?
@@ -483,6 +526,8 @@ model Transaction {
 /// Методы оплаты (payment_methods)
 /// -----------------------
 model PaymentMethod {
+  @@map("payment_methods")
+
   id                Int      @id @default(autoincrement())
   config            Json?
   status_id         Int
@@ -499,6 +544,8 @@ model PaymentMethod {
 /// Методы доставки (shipping_methods)
 /// -----------------------
 model ShippingMethod {
+  @@map("shipping_methods")
+
   id                 Int     @id @default(autoincrement())
   name_tx_id         Int
   description_tx_id  Int?
@@ -514,6 +561,8 @@ model ShippingMethod {
 /// Адреса (addresses)
 /// -----------------------
 model Address {
+  @@map("addresses")
+
   id            Int     @id @default(autoincrement())
   country       String
   city          String
@@ -530,6 +579,8 @@ model Address {
 /// Адреса заказов (order_addresses)
 /// -----------------------
 model OrderAddress {
+  @@map("order_addresses")
+
   id         Int                       @id @default(autoincrement())
   order_id   Int
   type       enum_order_addresses_type
@@ -545,6 +596,8 @@ model OrderAddress {
 /// Позиции заказа (order_items)
 /// -----------------------
 model OrderItem {
+  @@map("order_items")
+
   id                 Int     @id @default(autoincrement())
   order_id           Int
   product_variant_id Int
@@ -561,6 +614,8 @@ model OrderItem {
 /// Шаблоны сообщений (message_templates)
 /// -----------------------
 model MessageTemplate {
+  @@map("message_templates")
+
   id         Int                         @id @default(autoincrement())
   type       enum_message_templates_type
   name       String
@@ -575,6 +630,8 @@ model MessageTemplate {
 /// Корзины (carts)
 /// -----------------------
 model Cart {
+  @@map("carts")
+
   id         Int      @id @default(autoincrement())
   user_id    Int?
   session_id String?  @unique
@@ -589,6 +646,8 @@ model Cart {
 /// Позиции корзины (cart_items)
 /// -----------------------
 model CartItem {
+  @@map("cart_items")
+
   id                 Int      @id @default(autoincrement())
   cart_id            Int
   product_variant_id Int
@@ -604,6 +663,8 @@ model CartItem {
 /// Логи аудита (audit_logs)
 /// -----------------------
 model AuditLog {
+  @@map("audit_logs")
+
   id             Int      @id @default(autoincrement())
   user_id        Int?
   action         String
@@ -621,6 +682,8 @@ model AuditLog {
 /// Логи ошибок (error_logs)
 /// -----------------------
 model ErrorLog {
+  @@map("error_logs")
+
   id            Int      @id @default(autoincrement())
   error_message String
   error_code    String
@@ -637,6 +700,8 @@ model ErrorLog {
 /// Статистика просмотров (page_views)
 /// -----------------------
 model PageView {
+  @@map("page_views")
+
   id         Int      @id @default(autoincrement())
   page_url   String
   user_id    Int?
@@ -652,6 +717,8 @@ model PageView {
 /// Метрики производительности (performance_metrics)
 /// -----------------------
 model PerformanceMetric {
+  @@map("performance_metrics")
+
   id           Int      @id @default(autoincrement())
   metric_name  String
   metric_value Decimal  @db.Decimal(10, 2)
@@ -662,6 +729,8 @@ model PerformanceMetric {
 /// События конверсии (conversion_events)
 /// -----------------------
 model ConversionEvent {
+  @@map("conversion_events")
+
   id               Int      @id @default(autoincrement())
   event_name_tx_id Int
   user_id          Int?
@@ -675,6 +744,8 @@ model ConversionEvent {
 /// Настройки (settings)
 /// -----------------------
 model Setting {
+  @@map("settings")
+
   setting_key   String  @id
   setting_value String?
   description   String?
@@ -688,6 +759,8 @@ model Setting {
 /// Языки (langs)
 /// -----------------------
 model Lang {
+  @@map("langs")
+
   id                  Int     @id @default(autoincrement())
   lang_code           String
   lang_flag_image_url String?
@@ -701,6 +774,8 @@ model Lang {
 /// (композитный PK: (id, lang_id))
 /// -----------------------
 model Translation {
+  @@map("translations")
+
   id      Int
   lang_id Int
   value   String
@@ -714,6 +789,8 @@ model Translation {
 /// Промоакции (promotions)
 /// -----------------------
 model Promotion {
+  @@map("promotions")
+
   id                Int                           @id @default(autoincrement())
   name_tx_id        Int
   description_tx_id Int?
@@ -740,6 +817,8 @@ model Promotion {
 /// Связка промо - товары (promotion_products)
 /// -----------------------
 model PromotionProduct {
+  @@map("promotion_products")
+
   promotion_id Int
   product_id   Int
 
@@ -753,6 +832,8 @@ model PromotionProduct {
 /// Связка промо - категории (promotion_categories)
 /// -----------------------
 model PromotionCategory {
+  @@map("promotion_categories")
+
   promotion_id Int
   category_id  Int
 
@@ -766,6 +847,8 @@ model PromotionCategory {
 /// Связка промо - пользователи (promotion_users)
 /// -----------------------
 model PromotionUser {
+  @@map("promotion_users")
+
   promotion_id Int
   user_id      Int
 
@@ -779,6 +862,8 @@ model PromotionUser {
 /// Список желаний (user_wishlists)
 /// -----------------------
 model UserWishlist {
+  @@map("user_wishlists")
+
   product_id Int
   user_id    Int
   created_at DateTime @default(now())
