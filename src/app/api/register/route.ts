@@ -15,6 +15,7 @@ export async function POST(req: Request) {
             }
         })
 
+
         if (existingUser) {
             return NextResponse.json(
                 { error: existingUser.email === email ? "Email already in use" : "Username already in use" },
