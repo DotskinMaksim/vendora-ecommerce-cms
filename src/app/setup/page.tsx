@@ -1,62 +1,93 @@
 "use client"
 
-import React, { useState } from "react"
+import { useState, FormEvent } from "react"
 import { useRouter } from "next/navigation"
 
-export default function SetupWizardPage() {
+export default function SetupPage() {
     const router = useRouter()
+
     const [siteName, setSiteName] = useState("")
-    const [adminEmail, setAdminEmail] = useState("")
-    const [adminPassword, setAdminPassword] = useState("")
+    const [contactEmail, setContactEmail] = useState("")
+    const [timezone, setTimezone] = useState("")
+    const [currency, setCurrency] = useState("USD")
     const [error, setError] = useState("")
 
-    async function handleSetup(e: React.FormEvent) {
+    async function handleSubmit(e: FormEvent) {
         e.preventDefault()
         setError("")
 
-        // Вызываем API, передаём настройки
+        // Вызываем ваш API роут, который сохранит настройки в БД
         const res = await fetch("/api/setup", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ siteName, adminEmail, adminPassword }),
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                siteName,
+                contactEmail,
+                timezone,
+                currency,
+            }),
         })
-        const data = await res.json()
+
         if (!res.ok) {
-            setError(data.error || "Setup failed")
-        } else {
-            // Успешно, перенаправляем в админку или на главную
-            router.push("/admin")
+            const msg = await res.text()
+            setError(msg || "Error saving data")
+            return
         }
+
+        // Если всё хорошо, редиректим на главную
+        router.push("/")
     }
 
     return (
-        <div>
-            <h1>Site Setup</h1>
-            <form onSubmit={handleSetup}>
-                <input
-                    type="text"
-                    placeholder="Site name"
-                    value={siteName}
-                    onChange={(e) => setSiteName(e.target.value)}
-                    required
-                />
-                <input
-                    type="email"
-                    placeholder="Admin email"
-                    value={adminEmail}
-                    onChange={(e) => setAdminEmail(e.target.value)}
-                    required
-                />
-                <input
-                    type="password"
-                    placeholder="Admin password"
-                    value={adminPassword}
-                    onChange={(e) => setAdminPassword(e.target.value)}
-                    required
-                />
-                <button type="submit">Complete Setup</button>
+        <main style={{ maxWidth: 600, margin: "0 auto", padding: 24 }}>
+            <h1>Initial Site Setup</h1>
+            <form onSubmit={handleSubmit}>
+                <div>
+                    <label>Site Name: </label>
+                    <input
+                        type="text"
+                        required
+                        value={siteName}
+                        onChange={(e) => setSiteName(e.target.value)}
+                    />
+                </div>
+
+                <div>
+                    <label>Contact Email: </label>
+                    <input
+                        type="email"
+                        required
+                        value={contactEmail}
+                        onChange={(e) => setContactEmail(e.target.value)}
+                    />
+                </div>
+
+                <div>
+                    <label>Timezone: </label>
+                    <input
+                        type="text"
+                        placeholder="e.g. Europe/Moscow"
+                        value={timezone}
+                        onChange={(e) => setTimezone(e.target.value)}
+                    />
+                </div>
+
+                <div>
+                    <label>Currency: </label>
+                    <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                        <option value="USD">USD</option>
+                        <option value="EUR">EUR</option>
+                        <option value="RUB">RUB</option>
+                        {/* ... */}
+                    </select>
+                </div>
+
+                {error && <p style={{ color: "red" }}>{error}</p>}
+
+                <button type="submit" style={{ marginTop: 16 }}>Save & Complete Setup</button>
             </form>
-            {error && <p style={{color: "red"}}>{error}</p>}
-        </div>
+        </main>
     )
 }
