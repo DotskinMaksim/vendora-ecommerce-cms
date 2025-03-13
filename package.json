@@ -6,20 +6,26 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "prisma:generate": "prisma generate"
   },
   "dependencies": {
-    "@prisma/client": "^6.4.1",
+    "@headlessui/react": "^2.2.0",
     "@tailwindcss/vite": "^4.0.10",
     "bcrypt": "^5.1.1",
+    "currency-codes": "^2.2.0",
     "dotenv": "^16.4.7",
+    "moment-timezone": "^0.5.47",
     "next": "15.2.1",
     "next-auth": "^4.24.11",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-select": "^5.10.1",
+    "react-tooltip": "^5.28.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@prisma/client": "^6.5.0",
     "@tailwindcss/postcss": "^4",
     "@types/bcrypt": "^5.0.2",
     "@types/node": "^20",
@@ -29,9 +35,13 @@
     "eslint": "^9",
     "eslint-config-next": "15.2.1",
     "postcss": "^8.5.3",
+    "prisma": "^6.5.0",
+    "prisma-json-schema-generator": "^5.1.5",
+    "quicktype": "^23.0.171",
     "tailwindcss": "^4.0.10",
     "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "zod-prisma": "^0.5.4"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

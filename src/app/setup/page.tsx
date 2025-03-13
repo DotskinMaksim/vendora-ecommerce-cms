@@ -1,40 +1,129 @@
 "use client"
 
-import { useState, FormEvent } from "react"
+import { useState, useEffect, FormEvent, Fragment } from "react"
 import { useRouter } from "next/navigation"
+import dynamic from "next/dynamic"
+import currencyCodes from "currency-codes"
+import moment from "moment-timezone"
+
+import { SettingModel } from "@/types/prisma"
+import type { z } from "zod"
+
+type Setting = z.infer<typeof SettingModel>;
+
+
+import { Popover, Transition } from "@headlessui/react"
+
+// Динамический импорт react-select
+const ReactSelect = dynamic(() => import("react-select"), { ssr: false })
+
+// Получаем список ISO-кодов валют
+const codeList = currencyCodes.codes()
+const currencyOptions = codeList.map((code) => ({ value: code, label: code }))
+
+// Получаем список таймзон через moment
+const timeZoneNames = moment.tz.names()
+const timeZoneOptions = timeZoneNames.map((zone) => ({ value: zone, label: zone }))
+
+
+// Поповер-метка c анимацией и «стрелочкой»
+function LabelWithPopover({
+                              label,
+                              description,
+                          }: {
+    label: string
+    description: string
+}) {
+    return (
+        <div className="flex items-center mb-1">
+            <span className="font-medium text-gray-700 mr-2">{label}</span>
+            <Popover className="relative">
+                <Popover.Button
+                    className="inline-flex items-center justify-center
+                     w-5 h-5 rounded-full text-white
+                     bg-blue-500 hover:bg-blue-600
+                     focus:outline-none focus:ring-2 focus:ring-blue-300
+                     text-sm"
+                    title="Show info"
+                >
+                    ?
+                </Popover.Button>
+
+                {/* Анимация через Transition */}
+                <Transition
+                    as={Fragment}
+                    enter="transition duration-200 ease-out"
+                    enterFrom="opacity-0 translate-y-1"
+                    enterTo="opacity-100 translate-y-0"
+                    leave="transition duration-150 ease-in"
+                    leaveFrom="opacity-100 translate-y-0"
+                    leaveTo="opacity-0 translate-y-1"
+                >
+                    <Popover.Panel
+                        className="absolute z-10 mt-2 left-1/2 -translate-x-1/2 w-72
+                       bg-white border border-gray-200 shadow-lg rounded
+                       p-4"
+                        static
+                    >
+                        {/* Стрелочка */}
+                        <div className="absolute top-0 left-1/2 w-3 h-3 -mt-2 -translate-x-1/2 rotate-45 bg-white border-l border-t border-gray-200" />
+                        <p className="text-sm text-gray-700">{description}</p>
+                    </Popover.Panel>
+                </Transition>
+            </Popover>
+        </div>
+    )
+}
 
 export default function SetupPage() {
     const router = useRouter()
 
-    // Управляем шагами
+    // Шаги
     const [step, setStep] = useState(1)
 
-    // Собираем поля формы
+    // Стейт для данных формы
     const [siteName, setSiteName] = useState("")
     const [contactEmail, setContactEmail] = useState("")
-    const [timezone, setTimezone] = useState("")
-    const [currency, setCurrency] = useState("USD")
+    const [timezone, setTimezone] = useState<string>("")
+    const [currency, setCurrency] = useState<string>("USD")
     const [registrationEnabled, setRegistrationEnabled] = useState(false)
     const [autoLoginEnabled, setAutoLoginEnabled] = useState(false)
 
+    // Стейт для ошибок и настроек
     const [error, setError] = useState("")
+    const [settingsFromDB, setSettingsFromDB] = useState<Setting[]>([])
 
-    // Обработчик общей отправки формы
+    // 1. Загружаем настройки из БД при монтировании
+    useEffect(() => {
+        fetch("/api/settings")
+            .then((res) => res.json())
+            .then((data: Setting[]) => {
+                setSettingsFromDB(data)
+            })
+            .catch((err) => {
+                console.error(err)
+            })
+    }, [])
+
+    // 2. Вспомогательная функция, чтобы найти setting по ключу
+    function getSetting(settingKey: string): Setting | undefined {
+        return settingsFromDB.find((s) => s.setting_key === settingKey)
+    }
+
+    // Сохраняем
     async function handleSubmit(e: FormEvent) {
         e.preventDefault()
         setError("")
 
-        // Сформируем объект с данными со всех шагов
         const body = {
             siteName,
             contactEmail,
             timezone,
             currency,
             isRegistrationEnabled: registrationEnabled,
-            autoLoginEnabled
+            autoLoginEnabled,
         }
 
-        // Отправляем на наш API роут
         const res = await fetch("/api/setup", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -46,17 +135,27 @@ export default function SetupPage() {
             setError(msg || "Error saving data")
             return
         }
-
-        // Успешно — перенаправляем на главную
         router.push("/")
     }
 
-    // Вспомогательные функции для переключения шагов
     function nextStep() {
+        setError("")
+        if (step === 1) {
+            if (!siteName.trim() || !contactEmail.trim()) {
+                setError("Please fill in the required fields (Site Name and Contact Email).")
+                return
+            }
+        } else if (step === 2) {
+            if (!timezone.trim() || !currency.trim()) {
+                setError("Please select your Timezone and Currency.")
+                return
+            }
+        }
         setStep((prev) => prev + 1)
     }
 
     function prevStep() {
+        setError("")
         setStep((prev) => prev - 1)
     }
 
@@ -69,9 +168,13 @@ export default function SetupPage() {
                     {step === 1 && (
                         <div>
                             <div className="mb-4">
-                                <label className="block font-medium mb-1 text-gray-700">
-                                    Site Name:
-                                </label>
+                                <LabelWithPopover
+                                    label={getSetting("site_name")?.label || "Site Name:"}
+                                    description={
+                                        getSetting("site_name")?.description ||
+                                        "Public name of your site, shown in headers, etc."
+                                    }
+                                />
                                 <input
                                     type="text"
                                     required
@@ -82,9 +185,13 @@ export default function SetupPage() {
                             </div>
 
                             <div className="mb-4">
-                                <label className="block font-medium mb-1 text-gray-700">
-                                    Contact Email:
-                                </label>
+                                <LabelWithPopover
+                                    label={getSetting("contact_email")?.label || "Contact Email:"}
+                                    description={
+                                        getSetting("contact_email")?.description ||
+                                        "Email for administrative notifications and user contacts."
+                                    }
+                                />
                                 <input
                                     type="email"
                                     required
@@ -93,6 +200,8 @@ export default function SetupPage() {
                                     className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200"
                                 />
                             </div>
+
+                            {error && <p className="text-red-600">{error}</p>}
 
                             <div className="flex justify-end mt-6">
                                 <button
@@ -109,33 +218,44 @@ export default function SetupPage() {
                     {step === 2 && (
                         <div>
                             <div className="mb-4">
-                                <label className="block font-medium mb-1 text-gray-700">
-                                    Timezone:
-                                </label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g. Europe/Moscow"
-                                    value={timezone}
-                                    onChange={(e) => setTimezone(e.target.value)}
-                                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200"
+                                <LabelWithPopover
+                                    label={getSetting("timezone")?.label || "Timezone:"}
+                                    description={
+                                        getSetting("timezone")?.description ||
+                                        "Select the default timezone for your site."
+                                    }
+                                />
+                                <ReactSelect
+                                    options={timeZoneOptions}
+                                    value={timeZoneOptions.find((opt) => opt.value === timezone)}
+                                    onChange={(selectedOption) =>
+                                        setTimezone((selectedOption as any).value)
+                                    }
+                                    isSearchable
+                                    placeholder="Select timezone..."
                                 />
                             </div>
 
                             <div className="mb-4">
-                                <label className="block font-medium mb-1 text-gray-700">
-                                    Currency:
-                                </label>
-                                <select
-                                    value={currency}
-                                    onChange={(e) => setCurrency(e.target.value)}
-                                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200"
-                                >
-                                    <option value="USD">USD</option>
-                                    <option value="EUR">EUR</option>
-                                    <option value="RUB">RUB</option>
-                                    {/* ... другие варианты ... */}
-                                </select>
+                                <LabelWithPopover
+                                    label={getSetting("currency")?.label || "Currency:"}
+                                    description={
+                                        getSetting("currency")?.description ||
+                                        "Select the currency used for prices."
+                                    }
+                                />
+                                <ReactSelect
+                                    options={currencyOptions}
+                                    value={currencyOptions.find((opt) => opt.value === currency)}
+                                    onChange={(selectedOption) =>
+                                        setCurrency((selectedOption as any).value)
+                                    }
+                                    isSearchable
+                                    placeholder="Select currency..."
+                                />
                             </div>
+
+                            {error && <p className="text-red-600">{error}</p>}
 
                             <div className="flex justify-between mt-6">
                                 <button
@@ -159,9 +279,13 @@ export default function SetupPage() {
                     {step === 3 && (
                         <div>
                             <div className="mb-4">
-                                <label className="block font-medium mb-1 text-gray-700">
-                                    Allow Registration
-                                </label>
+                                <LabelWithPopover
+                                    label={getSetting("allow_registration")?.label || "Allow Registration"}
+                                    description={
+                                        getSetting("allow_registration")?.description ||
+                                        "If enabled, new users can register an account."
+                                    }
+                                />
                                 <label className="inline-flex items-center mt-2">
                                     <input
                                         type="checkbox"
@@ -174,9 +298,13 @@ export default function SetupPage() {
                             </div>
 
                             <div className="mb-4">
-                                <label className="block font-medium mb-1 text-gray-700">
-                                    Auto Login
-                                </label>
+                                <LabelWithPopover
+                                    label={getSetting("auto_login")?.label || "Auto Login"}
+                                    description={
+                                        getSetting("auto_login")?.description ||
+                                        "If enabled, returning users may be auto-logged in."
+                                    }
+                                />
                                 <label className="inline-flex items-center mt-2">
                                     <input
                                         type="checkbox"
@@ -188,14 +316,26 @@ export default function SetupPage() {
                                 </label>
                             </div>
 
-                            {/* Выводим все данные для наглядности (необязательно) */}
                             <div className="bg-gray-100 p-4 mb-4 rounded text-sm">
-                                <p><strong>Site Name:</strong> {siteName}</p>
-                                <p><strong>Contact Email:</strong> {contactEmail}</p>
-                                <p><strong>Timezone:</strong> {timezone}</p>
-                                <p><strong>Currency:</strong> {currency}</p>
-                                <p><strong>Registration Enabled:</strong> {registrationEnabled ? "Yes" : "No"}</p>
-                                <p><strong>Auto Login:</strong> {autoLoginEnabled ? "Yes" : "No"}</p>
+                                <p>
+                                    <strong>Site Name:</strong> {siteName}
+                                </p>
+                                <p>
+                                    <strong>Contact Email:</strong> {contactEmail}
+                                </p>
+                                <p>
+                                    <strong>Timezone:</strong> {timezone}
+                                </p>
+                                <p>
+                                    <strong>Currency:</strong> {currency}
+                                </p>
+                                <p>
+                                    <strong>Registration Enabled:</strong>{" "}
+                                    {registrationEnabled ? "Yes" : "No"}
+                                </p>
+                                <p>
+                                    <strong>Auto Login:</strong> {autoLoginEnabled ? "Yes" : "No"}
+                                </p>
                             </div>
 
                             {error && <p className="text-red-600">{error}</p>}
