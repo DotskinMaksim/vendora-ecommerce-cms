@@ -1,4 +1,4 @@
-// app/(site)/layout.tsx
+// app/setup/layout.tsx
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";

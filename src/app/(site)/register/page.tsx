@@ -1,31 +1,35 @@
-"use client"
+"use client";
 
-import React, { useState } from "react"
-import { useRouter } from "next/navigation"
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+
+// В данном коде мы можем импортировать RegisterDto, но
+// для отправки fetch() достаточно просто собрать { email, username, password }.
+// При желании, можно ещё жёстче типизировать handleSubmit.
 
 export default function RegisterPage() {
-    const [email, setEmail] = useState("")
-    const [username, setUsername] = useState("")
-    const [password, setPassword] = useState("")
-    const [error, setError] = useState("")
-    const [success, setSuccess] = useState("")
-    const router = useRouter()
+    const [email, setEmail] = useState("");
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
+    const router = useRouter();
 
     async function handleSubmit(e: React.FormEvent) {
-        e.preventDefault()
-        setError("")
-        setSuccess("")
+        e.preventDefault();
+        setError("");
+        setSuccess("");
 
         const res = await fetch("/api/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, username, password }),
-        })
-        const data = await res.json()
+        });
+        const data = await res.json();
         if (!res.ok) {
-            setError(data.error || "Something went wrong")
+            setError(data.error || "Something went wrong");
         } else {
-            setSuccess("User created. You can log in now.")
+            setSuccess("User created. You can log in now.");
             // Можно сразу перейти на /login
             // router.push("/login")
         }
@@ -61,5 +65,5 @@ export default function RegisterPage() {
             {error && <p style={{ color: "red" }}>{error}</p>}
             {success && <p style={{ color: "green" }}>{success}</p>}
         </div>
-    )
+    );
 }
