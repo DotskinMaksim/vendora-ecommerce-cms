@@ -4,12 +4,12 @@
  * DTO для настроек, возвращаемых из Prisma (сущность из БД).
  * Каждый Setting в БД имеет ключ, значение и т.д.
  */
-export interface Setting {
-    setting_key: string;
-    setting_value?: string;
+export interface SettingDto {
+    key: string;
+    value?: string;
     description?: string;
     label: string;
-    last_set_by?: number;
+    lastSetBy?: number;
 }
 
 /**
@@ -23,7 +23,5 @@ export interface SetupDto {
     currency: string;
     isRegistrationEnabled: boolean;
     autoLoginEnabled: boolean;
-
-    // Новое поле, которое будем сохранять в settings -> logo_url
-    logoUrl?: string;
+    logoUrl: string;
 }

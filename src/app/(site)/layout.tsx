@@ -5,9 +5,9 @@ import Navbar from "@/app/(site)/components/Navbar";
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
     const setting = await prisma.setting.findUnique({
-        where: { setting_key: "is_set_up" },
+        where: { key: "is_set_up" },
     })
-    const isSetUp = (setting?.setting_value === "true")
+    const isSetUp = (setting?.value === "true")
 
     if (!isSetUp) {
         redirect("/setup")

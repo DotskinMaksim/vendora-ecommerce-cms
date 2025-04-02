@@ -9,8 +9,8 @@ export async function GET(req: Request) {
 
     const user = await prisma.user.findFirst({
         where: {
-            email_verification_token: token,
-            email_verification_expires: { gt: new Date() },
+            EmailVerificationToken: token,
+            EmailVerificationExpires: { gt: new Date() },
         }
     })
     if (!user) {
@@ -19,11 +19,11 @@ export async function GET(req: Request) {
 
     // Помечаем как verify
     await prisma.user.update({
-        where: { id: user.id },
+        where: { Id: user.Id },
         data: {
-            email_verified: true,
-            email_verification_token: null,
-            email_verification_expires: null,
+            EmailVerified: true,
+            EmailVerificationToken: null,
+            EmailVerificationExpires: null,
         }
     })
     return NextResponse.json({ message: "Email verified" })

@@ -4,8 +4,8 @@ import { Fragment } from "react";
 import { Popover, Transition } from "@headlessui/react";
 
 interface LabelWithPopoverProps {
-    label: string;
-    description: string;
+    label: string | undefined;
+    description: string | undefined;
 }
 
 export default function LabelWithPopover({

@@ -5,9 +5,9 @@ import { headers } from "next/headers";
 
 export default async function SetupLayout({ children }: { children: React.ReactNode }) {
     const setting = await prisma.setting.findUnique({
-        where: { setting_key: "is_set_up" },
+        where: { key: "is_set_up" },
     });
-    const isSetUp = setting?.setting_value === "true";
+    const isSetUp = setting?.value === "true";
 
     if (isSetUp) {
         const headersList = await headers(); // Дожидаемся результата

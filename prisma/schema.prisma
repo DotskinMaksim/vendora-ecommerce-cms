@@ -10,24 +10,29 @@ datasource db {
 /// ------------------------
 /// Определяем Prisma enum
 /// ------------------------
-enum enum_message_templates_type {
+enum EnumMessageTemplatesType {
+  @@map("enum_message_templates_type")
   email
   sms
 }
 
-enum enum_product_images_image_type {
+enum EnumProductImagesImageType {
+  @@map("enum_product_images_image_type")
   main
   thumbnail
   gallery
   icon
 }
 
-enum enum_order_addresses_type {
+enum EnumOrderAddressesType {
+  @@map("enum_order_addresses_type")
+
   billing
   shipping
 }
 
-enum enum_products_unit_type {
+enum EnumProductsUnitType {
+  @@map("enum_products_unit_type")
   piece
   weight
   volume
@@ -37,23 +42,27 @@ enum enum_products_unit_type {
   service
 }
 
-enum enum_promotions_discount_type {
+enum EnumPromotionsDiscountType {
+  @@map("enum_promotions_discount_type")
   percentage
   fixed_amount
   free_shipping
   buy_x_get_y
 }
 
-enum enum_attributes_value_type {
+enum EnumAttributesValueType {
+  @@map("enum_attributes_value_type")
   text
   number
   // при необходимости добавь другие: json, number, etc.
 }
 
-model migrations {
-  id        Int    @id(map: "PK_8c82d7f526340ab734260ea46be") @default(autoincrement())
-  timestamp BigInt
-  name      String @db.VarChar
+model Migration {
+  @@map("migrations")
+
+  id        Int    @id(map: "PK_8c82d7f526340ab734260ea46be") @default(autoincrement()) @map("id")
+  timestamp BigInt @map("timestamp")
+  name      String @db.VarChar @map("name")
 }
 
 /// -----------------------
@@ -61,8 +70,8 @@ model migrations {
 /// -----------------------
 model Entity {
   @@map("entities")
-  id              Int             @id @default(autoincrement())
-  name            String          @unique
+  id              Int             @id @default(autoincrement()) @map("id")
+  name            String          @unique @map("name")
   statuses        Status[]
   defaultStatuses DefaultStatus[]
   auditLogs       AuditLog[]
@@ -73,12 +82,12 @@ model Entity {
 /// -----------------------
 model Status {
   @@map("statuses")
-  id          Int     @id @default(autoincrement())
-  entity_id   Int
-  entity      Entity  @relation(fields: [entity_id], references: [id], onDelete: Restrict)
-  name        String
-  color       String  @default("#000000")
-  description String?
+  id          Int     @id @default(autoincrement()) @map("id")
+  entityId    Int      @map("entity_id")
+  entity      Entity  @relation(fields: [entityId], references: [id], onDelete: Restrict)
+  name        String  @map("name")
+  color       String  @default("#000000") @map("color")
+  description String? @map("description")
 
   // Cвязи со многими моделями, где в схемах прописан FK на statuses.id
   users           User[]
@@ -91,18 +100,19 @@ model Status {
   defaultStatuses DefaultStatus[]
 }
 
-/// -----------------------
+/// -----------------------------
 /// Таблица "дефолтных" статусов
-/// -----------------------
+/// -----------------------------
 model DefaultStatus {
   @@map("default_statuses")
-  entity_id Int
-  status_id Int
 
-  entity Entity @relation(fields: [entity_id], references: [id], onDelete: Cascade)
-  status Status @relation(fields: [status_id], references: [id], onDelete: Cascade)
+  entityId Int @map("entity_id")
+  statusId Int @map("status_id")
 
-  @@id([entity_id, status_id])
+  entity Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  status Status @relation(fields: [statusId], references: [id], onDelete: Cascade)
+
+  @@id([entityId, statusId])
 }
 
 /// -----------------------
@@ -110,36 +120,36 @@ model DefaultStatus {
 /// -----------------------
 model User {
   @@map("users")
-  id                         Int       @id @default(autoincrement())
-  username                   String    @unique
-  email                      String    @unique
-  email_verified             Boolean   @default(false)
-  password_hash              String
-  status_id                  Int?
-  status_set_at              DateTime?
-  status_set_until           DateTime?
-  status_set_by              Int?
-  created_at                 DateTime  @default(now())
-  last_login_at              DateTime?
-  login_attempts             Int       @default(0)
-  email_verification_token   String?
-  email_verification_expires DateTime?
-  two_factor_auth_enable     Boolean   @default(false)
-  first_name                 String?
-  last_name                  String?
-  phone_code                 String?
-  phone_number               String?
-  phone_verified             Boolean   @default(false)
+
+  id                       Int      @id @default(autoincrement()) @map("id")
+  username                 String   @unique @map("username")
+  email                    String   @unique @map("email")
+  emailVerified            Boolean  @default(false) @map("email_verified")
+  passwordHash             String   @map("password_hash")
+  statusId                 Int?     @map("status_id")
+  statusSetAt              DateTime? @map("status_set_at")
+  statusSetUntil           DateTime? @map("status_set_until")
+  statusSetBy              Int?     @map("status_set_by")
+  createdAt                DateTime @default(now()) @map("created_at")
+  lastLoginAt              DateTime? @map("last_login_at")
+  loginAttempts            Int      @default(0) @map("login_attempts")
+  emailVerificationToken   String?  @map("email_verification_token")
+  emailVerificationExpires DateTime? @map("email_verification_expires")
+  twoFactorAuthEnable      Boolean  @default(false) @map("two_factor_auth_enable")
+  firstName                String?  @map("first_name")
+  lastName                 String?  @map("last_name")
+  phoneCode                String?  @map("phone_code")
+  phoneNumber              String?  @map("phone_number")
+  phoneVerified            Boolean  @default(false) @map("phone_verified")
 
   /// Связь на статус
-  status Status? @relation(fields: [status_id], references: [id], onDelete: Restrict)
+  status Status? @relation(fields: [statusId], references: [id], onDelete: Restrict)
 
   /// Самоссылка: кто установил статус?
-  statusSetByUser User? @relation("UserStatusSetBy", fields: [status_set_by], references: [id], onDelete: SetNull)
+  statusSetByUser    User?   @relation("UserStatusSetBy", fields: [statusSetBy], references: [id], onDelete: SetNull)
+  setStatusForUsers  User[]  @relation("UserStatusSetBy")
 
-  setStatusForUsers User[] @relation("UserStatusSetBy")
-
-  /// Связи на многие другие модели
+  /// Связи на другие сущности
   userRoles           UserRole[]
   userPasswordHistory UserPasswordHistory[]
   productsCreated     Product[]             @relation("ProductCreatedBy")
@@ -156,37 +166,38 @@ model User {
   settingsSet         Setting[]             @relation("SettingLastSetBy")
   promotionUsers      PromotionUser[]
 
-  @@index([status_id])
-  @@index([phone_number])
+  @@index([statusId])
+  @@index([email])
+  @@index([phoneNumber])
 }
 
-/// -----------------------
+/// ------------------------------
 /// Роли пользователей (user_roles)
-/// -----------------------
+/// ------------------------------
 model UserRole {
   @@map("user_roles")
 
-  user_id Int
-  role_id Int
+  userId Int @map("user_id")
+  roleId Int @map("role_id")
 
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  role Role @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
-  @@id([user_id, role_id])
+  @@id([userId, roleId])
 }
-
-/// -----------------------
+/// ------------------------------------
 /// История паролей (user_password_history)
-/// -----------------------
+/// ------------------------------------
 model UserPasswordHistory {
   @@map("user_password_history")
-  id                Int      @id @default(autoincrement())
-  user_id           Int
-  old_password_hash String
-  changed_at        DateTime @default(now())
-  reason            String?
 
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  id               Int      @id @default(autoincrement()) @map("id")
+  userId           Int      @map("user_id")
+  oldPasswordHash  String   @map("old_password_hash")
+  changedAt        DateTime @default(now()) @map("changed_at")
+  reason           String?  @map("reason")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 /// -----------------------
@@ -195,9 +206,9 @@ model UserPasswordHistory {
 model Role {
   @@map("roles")
 
-  id                Int  @id @default(autoincrement())
-  name_tx_id        Int
-  description_tx_id Int?
+  id               Int @id @default(autoincrement()) @map("id")
+  nameTxId         Int @map("name_tx_id")
+  descriptionTxId  Int? @map("description_tx_id")
 
   userRoles       UserRole[]
   rolePermissions RolePermission[]
@@ -209,26 +220,26 @@ model Role {
 model Permission {
   @@map("permissions")
 
-  id                Int  @id @default(autoincrement())
-  name_tx_id        Int
-  description_tx_id Int?
+  id              Int @id @default(autoincrement()) @map("id")
+  nameTxId        Int @map("name_tx_id")
+  descriptionTxId Int? @map("description_tx_id")
 
   rolePermissions RolePermission[]
 }
 
-/// -----------------------
+/// --------------------------------------------
 /// Связка ролей и разрешений (role_permissions)
-/// -----------------------
+/// --------------------------------------------
 model RolePermission {
   @@map("role_permissions")
 
-  role_id       Int
-  permission_id Int
+  roleId       Int @map("role_id")
+  permissionId Int @map("permission_id")
 
-  role       Role       @relation(fields: [role_id], references: [id], onDelete: Cascade)
-  permission Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
-  @@id([role_id, permission_id])
+  @@id([roleId, permissionId])
 }
 
 /// -----------------------
@@ -236,20 +247,22 @@ model RolePermission {
 /// -----------------------
 model Product {
   @@map("products")
-  id                Int                     @id @default(autoincrement())
-  slug              String                  @unique
-  price             Decimal                 @db.Decimal(10, 2)
-  unit_type         enum_products_unit_type
-  unit_name_tx_id   Int
-  status_id         Int
-  name_tx_id        Int
-  description_tx_id Int?
-  created_at        DateTime                @default(now())
-  updated_at        DateTime                @default(now())
-  created_by        Int?
 
-  status        Status @relation(fields: [status_id], references: [id], onDelete: Restrict)
-  createdByUser User?  @relation("ProductCreatedBy", fields: [created_by], references: [id], onDelete: SetNull)
+  id               Int                     @id @default(autoincrement()) @map("id")
+  slug             String                  @unique @map("slug")
+  price            Decimal                 @db.Decimal(10, 2) @map("price")
+  unitType         EnumProductsUnitType @map("unit_type")
+  unitNameTxId     Int                     @map("unit_name_tx_id")
+  statusId         Int                     @map("status_id")
+  nameTxId         Int                     @map("name_tx_id")
+  descriptionTxId  Int?                    @map("description_tx_id")
+  reference        String?                 @map("reference")
+  createdAt        DateTime                @default(now()) @map("created_at")
+  updatedAt        DateTime                @default(now()) @map("updated_at")
+  createdBy        Int?                    @map("created_by")
+
+  status        Status @relation(fields: [statusId], references: [id], onDelete: Restrict)
+  createdByUser User?  @relation("ProductCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
 
   productImages     ProductImage[]
   productReviews    ProductReview[]
@@ -259,26 +272,26 @@ model Product {
   promotionProducts PromotionProduct[]
   userWishlists     UserWishlist[]
 
-  @@index([status_id])
-  @@index([created_at])
-  @@index([name_tx_id])
+  @@index([statusId])
+  @@index([createdAt])
+  @@index([nameTxId])
   @@index([price])
 }
 
-/// -----------------------
+/// ------------------------------
 /// Изображения товаров (product_images)
-/// -----------------------
+/// ------------------------------
 model ProductImage {
   @@map("product_images")
 
-  id         Int                            @id @default(autoincrement())
-  product_id Int
-  image_url  String
-  image_type enum_product_images_image_type
-  sort_order Int                            @default(0)
-  created_at DateTime                       @default(now())
+  id         Int                            @id @default(autoincrement()) @map("id")
+  productId  Int                            @map("product_id")
+  imageUrl   String                         @map("image_url")
+  imageType  EnumProductImagesImageType @map("image_type")
+  sortOrder  Int                            @default(0) @map("sort_order")
+  createdAt  DateTime                       @default(now()) @map("created_at")
 
-  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 /// -----------------------
@@ -287,86 +300,82 @@ model ProductImage {
 model ProductReview {
   @@map("product_reviews")
 
-  id         Int      @id @default(autoincrement())
-  product_id Int
-  user_id    Int
-  rating     Int
-  comment    String?
-  lang_id    Int
-  created_at DateTime @default(now())
-  likes      Int      @default(0)
-  dislikes   Int      @default(0)
+  id        Int      @id @default(autoincrement()) @map("id")
+  productId Int      @map("product_id")
+  userId    Int      @map("user_id")
+  rating    Int      @map("rating")
+  comment   String?  @map("comment")
+  langId    Int      @map("lang_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  likes     Int      @default(0) @map("likes")
+  dislikes  Int      @default(0) @map("dislikes")
 
-  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  lang    Lang    @relation(fields: [lang_id], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lang    Lang    @relation(fields: [langId], references: [id], onDelete: Cascade)
 }
-
 /// -----------------------
 /// Теги (tags)
 /// -----------------------
 model Tag {
   @@map("tags")
 
-  id         Int    @id @default(autoincrement())
-  name_tx_id Int
-  slug       String @unique
+  id        Int    @id @default(autoincrement()) @map("id")
+  nameTxId  Int    @map("name_tx_id")
+  slug      String @unique @map("slug")
 
   productTags ProductTag[]
 }
-
-/// -----------------------
+/// ----------------------------------
 /// Связка товары - теги (product_tags)
-/// -----------------------
+/// ----------------------------------
 model ProductTag {
-
   @@map("product_tags")
 
-  product_id Int
-  tag_id     Int
+  productId Int @map("product_id")
+  tagId     Int @map("tag_id")
 
-  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
-  tag     Tag     @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
-  @@id([product_id, tag_id])
+  @@id([productId, tagId])
 }
-
 /// -----------------------
 /// Категории (categories)
 /// -----------------------
 model Category {
   @@map("categories")
 
-  id              Int     @id @default(autoincrement())
-  slug            String  @unique
-  parent_id       Int?
-  name_tx_id      Int
-  sort_order      Int?    @default(0)
-  for_adults_only Boolean @default(false)
-  created_by      Int?
+  id             Int     @id @default(autoincrement()) @map("id")
+  slug           String  @unique @map("slug")
+  parentId       Int?    @map("parent_id")
+  nameTxId       Int     @map("name_tx_id")
+  sortOrder      Int?    @default(0) @map("sort_order")
+  forAdultsOnly  Boolean @default(false) @map("for_adults_only")
+  createdBy      Int?    @map("created_by")
 
-  parent   Category?  @relation("CategoryParent", fields: [parent_id], references: [id], onDelete: SetNull)
+  parent   Category?  @relation("CategoryParent", fields: [parentId], references: [id], onDelete: SetNull)
   children Category[] @relation("CategoryParent")
 
-  createdByUser User? @relation("CategoryCreatedBy", fields: [created_by], references: [id], onDelete: SetNull)
+  createdByUser User? @relation("CategoryCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
 
   productCategories   ProductCategory[]
   promotionCategories PromotionCategory[]
 }
 
-/// -----------------------
+/// ----------------------------------------------
 /// Связка товары - категории (product_categories)
-/// -----------------------
+/// ----------------------------------------------
 model ProductCategory {
   @@map("product_categories")
 
-  product_id  Int
-  category_id Int
+  productId  Int @map("product_id")
+  categoryId Int @map("category_id")
 
-  product  Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
-  category Category @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  @@id([product_id, category_id])
+  @@id([productId, categoryId])
 }
 
 /// -----------------------
@@ -375,50 +384,49 @@ model ProductCategory {
 model Attribute {
   @@map("attributes")
 
-  id         Int                        @id @default(autoincrement())
-  name_tx_id Int
-  value_type enum_attributes_value_type
-  created_by Int?
+  id         Int                        @id @default(autoincrement()) @map("id")
+  nameTxId   Int                        @map("name_tx_id")
+  valueType  EnumAttributesValueType    @map("value_type")
+  createdBy  Int?                       @map("created_by")
 
-  createdByUser     User?              @relation("AttributeCreatedBy", fields: [created_by], references: [id], onDelete: SetNull)
+  createdByUser     User?              @relation("AttributeCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
   productAttributes ProductAttribute[]
 }
 
-/// -----------------------
+/// -----------------------------
 /// Варианты товаров (product_variants)
-/// -----------------------
+/// -----------------------------
 model ProductVariant {
   @@map("product_variants")
 
-  id                 Int      @id @default(autoincrement())
-  product_id         Int
-  available_quantity Decimal? @default("0") @db.Decimal(10, 3)
-  is_default         Boolean  @default(false)
+  id                Int      @id @default(autoincrement()) @map("id")
+  productId         Int      @map("product_id")
+  availableQuantity Decimal? @default("0") @db.Decimal(10, 3) @map("available_quantity")
+  isDefault         Boolean  @default(false) @map("is_default")
 
-  product           Product            @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  product           Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
   productAttributes ProductAttribute[]
   warehouseStocks   WarehouseStock[]
   orderItems        OrderItem[]
   cartItems         CartItem[]
 }
-
-/// -----------------------
+/// --------------------------------------
 /// Значения атрибутов (product_attributes)
-/// -----------------------
+/// --------------------------------------
 model ProductAttribute {
   @@map("product_attributes")
 
-  id                        Int      @id @default(autoincrement())
-  product_variant_id        Int
-  attribute_id              Int
-  attribute_value           String
-  attribute_label_tx_id     Int?
-  attribute_unit_type_tx_id Int?
-  is_variant                Boolean  @default(false)
-  price_modifier            Decimal? @db.Decimal(10, 2)
+  id                     Int      @id @default(autoincrement()) @map("id")
+  productVariantId       Int      @map("product_variant_id")
+  attributeId            Int      @map("attribute_id")
+  attributeValue         String   @map("attribute_value")
+  attributeLabelTxId     Int?     @map("attribute_label_tx_id")
+  attributeUnitTypeTxId  Int?     @map("attribute_unit_type_tx_id")
+  isVariant              Boolean  @default(false) @map("is_variant")
+  priceModifier          Decimal? @db.Decimal(10, 2) @map("price_modifier")
 
-  productVariant ProductVariant @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
-  attribute      Attribute      @relation(fields: [attribute_id], references: [id], onDelete: Restrict)
+  productVariant ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
+  attribute      Attribute      @relation(fields: [attributeId], references: [id], onDelete: Restrict)
 }
 
 /// -----------------------
@@ -427,35 +435,35 @@ model ProductAttribute {
 model Warehouse {
   @@map("warehouses")
 
-  id           Int      @id @default(autoincrement())
-  name         String   @unique
-  address_id   Int
-  phone_code   String?
-  phone_number String?
-  email        String   @unique
-  created_at   DateTime @default(now())
-  updated_at   DateTime @default(now())
+  id          Int      @id @default(autoincrement()) @map("id")
+  name        String   @unique @map("name")
+  addressId   Int      @map("address_id")
+  phoneCode   String?  @map("phone_code")
+  phoneNumber String?  @map("phone_number")
+  email       String   @unique @map("email")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @map("updated_at")
 
-  address Address @relation(fields: [address_id], references: [id], onDelete: Restrict)
+  address Address @relation(fields: [addressId], references: [id], onDelete: Restrict)
 
   warehouseStocks WarehouseStock[]
 }
-
-/// -----------------------
+/// ------------------------------------
 /// Наличие на складах (warehouse_stock)
-/// -----------------------
+/// ------------------------------------
 model WarehouseStock {
   @@map("warehouse_stock")
 
-  id                 Int      @id @default(autoincrement())
-  warehouse_id       Int
-  product_variant_id Int
-  quantity_on_hand   Decimal  @default("0") @db.Decimal(10, 3)
-  reserved_quantity  Decimal  @default("0") @db.Decimal(10, 3)
-  updated_at         DateTime @default(now())
+  id                Int      @id @default(autoincrement()) @map("id")
+  warehouseId       Int      @map("warehouse_id")
+  warehouseLocation String?  @map("warehouse_location")
+  productVariantId  Int      @map("product_variant_id")
+  quantityOnHand    Decimal  @default("0") @db.Decimal(10, 3) @map("quantity_on_hand")
+  updatedAt         DateTime @default(now()) @map("updated_at")
 
-  warehouse      Warehouse      @relation(fields: [warehouse_id], references: [id], onDelete: Restrict)
-  productVariant ProductVariant @relation(fields: [product_variant_id], references: [id], onDelete: Restrict)
+
+  warehouse      Warehouse      @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  productVariant ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Restrict)
 }
 
 /// -----------------------
@@ -464,36 +472,36 @@ model WarehouseStock {
 model Order {
   @@map("orders")
 
-  id                 Int      @id @default(autoincrement())
-  user_id            Int?
-  total_amount       Decimal  @db.Decimal(10, 2)
-  status_id          Int
-  created_at         DateTime @default(now())
-  shipping_method_id Int?
+  id                Int      @id @default(autoincrement()) @map("id")
+  userId            Int?     @map("user_id")
+  totalAmount       Decimal  @db.Decimal(10, 2) @map("total_amount")
+  statusId          Int      @map("status_id")
+  createdAt         DateTime @default(now()) @map("created_at")
+  shippingMethodId  Int?     @map("shipping_method_id")
 
-  user           User?           @relation(fields: [user_id], references: [id], onDelete: SetNull)
-  status         Status          @relation(fields: [status_id], references: [id], onDelete: Restrict)
-  shippingMethod ShippingMethod? @relation(fields: [shipping_method_id], references: [id], onDelete: SetNull)
+  user           User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  status         Status          @relation(fields: [statusId], references: [id], onDelete: Restrict)
+  shippingMethod ShippingMethod? @relation(fields: [shippingMethodId], references: [id], onDelete: SetNull)
 
-  orderItems      OrderItem[]
-  promotionUsages PromotionUsage[]
-  transactions    Transaction[]
-  orderAddresses  OrderAddress[]
+  orderItems       OrderItem[]
+  promotionUsages  PromotionUsage[]
+  transactions     Transaction[]
+  orderAddresses   OrderAddress[]
 }
 
-/// -----------------------
+/// ----------------------------------
 /// Применённые промо (promotion_usages)
-/// -----------------------
+/// ----------------------------------
 model PromotionUsage {
   @@map("promotion_usages")
 
-  order_id     Int
-  promotion_id Int
+  orderId     Int @map("order_id")
+  promotionId Int @map("promotion_id")
 
-  order     Order     @relation(fields: [order_id], references: [id], onDelete: Cascade)
-  promotion Promotion @relation(fields: [promotion_id], references: [id], onDelete: Cascade)
+  order     Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
 
-  @@id([order_id, promotion_id])
+  @@id([orderId, promotionId])
 }
 
 /// -----------------------
@@ -502,58 +510,58 @@ model PromotionUsage {
 model Transaction {
   @@map("transactions")
 
-  id                Int      @id @default(autoincrement())
-  order_id          Int
-  payment_method_id Int?
-  gateway_txn_id    String?  @unique
-  payment_reference String?  @unique
-  amount            Decimal  @default("0.00") @db.Decimal(10, 2)
-  currency          String   @default("USD")
-  status_id         Int
-  created_at        DateTime @default(now())
-  updated_at        DateTime @default(now())
-  ip_address        String?
-  error_message     String?
-  gateway_response  String?
-  config            Json?
+  id                Int      @id @default(autoincrement()) @map("id")
+  orderId           Int      @map("order_id")
+  paymentMethodId   Int?     @map("payment_method_id")
+  gatewayTxnId      String?  @unique @map("gateway_txn_id")
+  paymentReference  String?  @unique @map("payment_reference")
+  amount            Decimal  @default("0.00") @db.Decimal(10, 2) @map("amount")
+  currency          String   @default("USD") @map("currency")
+  statusId          Int      @map("status_id")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @default(now()) @map("updated_at")
+  ipAddress         String?  @map("ip_address")
+  errorMessage      String?  @map("error_message")
+  gatewayResponse   String?  @map("gateway_response")
+  config            Json?    @map("config")
 
-  order         Order          @relation(fields: [order_id], references: [id], onDelete: Restrict)
-  paymentMethod PaymentMethod? @relation(fields: [payment_method_id], references: [id], onDelete: SetNull)
-  status        Status         @relation(fields: [status_id], references: [id], onDelete: Restrict)
+  order         Order          @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  paymentMethod PaymentMethod? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  status        Status         @relation(fields: [statusId], references: [id], onDelete: Restrict)
 }
 
-/// -----------------------
+/// ------------------------------
 /// Методы оплаты (payment_methods)
-/// -----------------------
+/// ------------------------------
 model PaymentMethod {
   @@map("payment_methods")
 
-  id                Int      @id @default(autoincrement())
-  config            Json?
-  status_id         Int
-  name              String   @unique
-  description_tx_id Int?
-  created_at        DateTime @default(now())
-  updated_at        DateTime @default(now())
+  id               Int      @id @default(autoincrement()) @map("id")
+  config           Json?    @map("config")
+  statusId         Int      @map("status_id")
+  name             String   @unique @map("name")
+  descriptionTxId  Int?     @map("description_tx_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @default(now()) @map("updated_at")
 
-  status       Status        @relation(fields: [status_id], references: [id], onDelete: Restrict)
+  status       Status        @relation(fields: [statusId], references: [id], onDelete: Restrict)
   transactions Transaction[]
 }
 
-/// -----------------------
+/// ----------------------------------
 /// Методы доставки (shipping_methods)
-/// -----------------------
+/// ----------------------------------
 model ShippingMethod {
   @@map("shipping_methods")
 
-  id                 Int     @id @default(autoincrement())
-  name_tx_id         Int
-  description_tx_id  Int?
-  price              Decimal @default("0.00") @db.Decimal(10, 2)
-  delivery_time_days Int     @default(0)
-  status_id          Int
+  id                Int     @id @default(autoincrement()) @map("id")
+  nameTxId          Int     @map("name_tx_id")
+  descriptionTxId   Int?    @map("description_tx_id")
+  price             Decimal @default("0.00") @db.Decimal(10, 2) @map("price")
+  deliveryTimeDays  Int     @default(0) @map("delivery_time_days")
+  statusId          Int     @map("status_id")
 
-  status Status  @relation(fields: [status_id], references: [id], onDelete: Restrict)
+  status Status @relation(fields: [statusId], references: [id], onDelete: Restrict)
   orders Order[]
 }
 
@@ -563,67 +571,67 @@ model ShippingMethod {
 model Address {
   @@map("addresses")
 
-  id            Int     @id @default(autoincrement())
-  country       String
-  city          String
-  state         String
-  address_line1 String
-  address_line2 String?
-  postal_code   String
+  id           Int    @id @default(autoincrement()) @map("id")
+  country      String @map("country")
+  city         String @map("city")
+  state        String @map("state")
+  addressLine1 String @map("address_line1")
+  addressLine2 String? @map("address_line2")
+  postalCode   String @map("postal_code")
 
   warehouses     Warehouse[]
   orderAddresses OrderAddress[]
 }
 
-/// -----------------------
+/// -----------------------------
 /// Адреса заказов (order_addresses)
-/// -----------------------
+/// -----------------------------
 model OrderAddress {
   @@map("order_addresses")
 
-  id         Int                       @id @default(autoincrement())
-  order_id   Int
-  type       enum_order_addresses_type
-  first_name String
-  last_name  String
-  address_id Int
+  id         Int                     @id @default(autoincrement()) @map("id")
+  orderId    Int                     @map("order_id")
+  type       EnumOrderAddressesType @map("type")
+  firstName  String                  @map("first_name")
+  lastName   String                  @map("last_name")
+  addressId  Int                     @map("address_id")
 
-  order   Order   @relation(fields: [order_id], references: [id], onDelete: Cascade)
-  address Address @relation(fields: [address_id], references: [id], onDelete: Restrict)
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  address Address @relation(fields: [addressId], references: [id], onDelete: Restrict)
 }
 
-/// -----------------------
+/// ------------------------------
 /// Позиции заказа (order_items)
-/// -----------------------
+/// ------------------------------
 model OrderItem {
   @@map("order_items")
 
-  id                 Int     @id @default(autoincrement())
-  order_id           Int
-  product_variant_id Int
-  quantity           Decimal @default("1") @db.Decimal(10, 3)
-  price_each         Decimal @db.Decimal(10, 2)
-  subtotal           Decimal @db.Decimal(10, 2)
-  product_snapshot   Json?
+  id               Int     @id @default(autoincrement()) @map("id")
+  orderId          Int     @map("order_id")
+  productVariantId Int     @map("product_variant_id")
+  quantity         Decimal @default("1") @db.Decimal(10, 3) @map("quantity")
+  priceEach        Decimal @db.Decimal(10, 2) @map("price_each")
+  subtotal         Decimal @db.Decimal(10, 2) @map("subtotal")
+  productSnapshot  Json?   @map("product_snapshot")
 
-  order          Order          @relation(fields: [order_id], references: [id], onDelete: Cascade)
-  productVariant ProductVariant @relation(fields: [product_variant_id], references: [id], onDelete: Restrict)
+  order          Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productVariant ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Restrict)
 }
 
-/// -----------------------
+/// ----------------------------------------
 /// Шаблоны сообщений (message_templates)
-/// -----------------------
+/// ----------------------------------------
 model MessageTemplate {
   @@map("message_templates")
 
-  id         Int                         @id @default(autoincrement())
-  type       enum_message_templates_type
-  name       String
-  subject    String
-  body       String
-  variables  Json?
-  created_at DateTime                    @default(now())
-  updated_at DateTime                    @default(now())
+  id         Int                         @id @default(autoincrement()) @map("id")
+  type       EnumMessageTemplatesType @map("type")
+  name       String                      @map("name")
+  subject    String                      @map("subject")
+  body       String                      @map("body")
+  variables  Json?                       @map("variables")
+  createdAt  DateTime                    @default(now()) @map("created_at")
+  updatedAt  DateTime                    @default(now()) @map("updated_at")
 }
 
 /// -----------------------
@@ -632,50 +640,48 @@ model MessageTemplate {
 model Cart {
   @@map("carts")
 
-  id         Int      @id @default(autoincrement())
-  user_id    Int?
-  session_id String?  @unique
-  created_at DateTime @default(now())
-  updated_at DateTime @default(now())
+  id         Int      @id @default(autoincrement()) @map("id")
+  userId     Int?     @map("user_id")
+  sessionId  String?  @unique @map("session_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @map("updated_at")
 
-  user      User?      @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
   cartItems CartItem[]
 }
-
-/// -----------------------
+/// --------------------------------
 /// Позиции корзины (cart_items)
-/// -----------------------
+/// --------------------------------
 model CartItem {
   @@map("cart_items")
 
-  id                 Int      @id @default(autoincrement())
-  cart_id            Int
-  product_variant_id Int
-  quantity           Decimal  @default("1") @db.Decimal(10, 3)
-  created_at         DateTime @default(now())
-  updated_at         DateTime @default(now())
+  id               Int      @id @default(autoincrement()) @map("id")
+  cartId           Int      @map("cart_id")
+  productVariantId Int      @map("product_variant_id")
+  quantity         Decimal  @default("1") @db.Decimal(10, 3) @map("quantity")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @default(now()) @map("updated_at")
 
-  cart           Cart           @relation(fields: [cart_id], references: [id], onDelete: Cascade)
-  productVariant ProductVariant @relation(fields: [product_variant_id], references: [id], onDelete: Restrict)
+  cart           Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productVariant ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Restrict)
 }
-
 /// -----------------------
 /// Логи аудита (audit_logs)
 /// -----------------------
 model AuditLog {
   @@map("audit_logs")
 
-  id             Int      @id @default(autoincrement())
-  user_id        Int?
-  action         String
-  ip_address     String?
-  created_at     DateTime @default(now())
-  changes        Json?
-  entity_type_id Int?
-  entity_id      Int?
+  id            Int      @id @default(autoincrement()) @map("id")
+  userId        Int?     @map("user_id")
+  action        String   @map("action")
+  ipAddress     String?  @map("ip_address")
+  createdAt     DateTime @default(now()) @map("created_at")
+  changes       Json?    @map("changes")
+  entityTypeId  Int?     @map("entity_type_id")
+  entityId      Int?     @map("entity_id")
 
-  user        User?   @relation(fields: [user_id], references: [id], onDelete: SetNull)
-  entity_type Entity? @relation(fields: [entity_type_id], references: [id], onDelete: SetNull)
+  user       User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  entityType Entity? @relation(fields: [entityTypeId], references: [id], onDelete: SetNull)
 }
 
 /// -----------------------
@@ -684,60 +690,59 @@ model AuditLog {
 model ErrorLog {
   @@map("error_logs")
 
-  id            Int      @id @default(autoincrement())
-  error_message String
-  error_code    String
-  file          String?
-  line          Int?
-  stacktrace    String?
-  user_id       Int?
-  created_at    DateTime @default(now())
+  id           Int      @id @default(autoincrement()) @map("id")
+  errorMessage String   @map("error_message")
+  errorCode    String   @map("error_code")
+  file         String?  @map("file")
+  line         Int?     @map("line")
+  stacktrace   String?  @map("stacktrace")
+  userId       Int?     @map("user_id")
+  createdAt    DateTime @default(now()) @map("created_at")
 
-  user User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
-/// -----------------------
+/// ------------------------------
 /// Статистика просмотров (page_views)
-/// -----------------------
+/// ------------------------------
 model PageView {
   @@map("page_views")
 
-  id         Int      @id @default(autoincrement())
-  page_url   String
-  user_id    Int?
-  visitor_ip String
-  referrer   String?
-  user_agent String?
-  created_at DateTime @default(now())
+  id         Int      @id @default(autoincrement()) @map("id")
+  pageUrl    String   @map("page_url")
+  userId     Int?     @map("user_id")
+  visitorIp  String   @map("visitor_ip")
+  referrer   String?  @map("referrer")
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
 
-  user User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
-/// -----------------------
+/// --------------------------------------------
 /// Метрики производительности (performance_metrics)
-/// -----------------------
+/// --------------------------------------------
 model PerformanceMetric {
   @@map("performance_metrics")
 
-  id           Int      @id @default(autoincrement())
-  metric_name  String
-  metric_value Decimal  @db.Decimal(10, 2)
-  measured_at  DateTime @default(now())
+  id          Int      @id @default(autoincrement()) @map("id")
+  metricName  String   @map("metric_name")
+  metricValue Decimal  @db.Decimal(10, 2) @map("metric_value")
+  measuredAt  DateTime @default(now()) @map("measured_at")
 }
-
-/// -----------------------
+/// -------------------------------------
 /// События конверсии (conversion_events)
-/// -----------------------
+/// -------------------------------------
 model ConversionEvent {
   @@map("conversion_events")
 
-  id               Int      @id @default(autoincrement())
-  event_name_tx_id Int
-  user_id          Int?
-  details_tx_id    Int?
-  created_at       DateTime @default(now())
+  id             Int      @id @default(autoincrement()) @map("id")
+  eventNameTxId  Int      @map("event_name_tx_id")
+  userId         Int?     @map("user_id")
+  detailsTxId    Int?     @map("details_tx_id")
+  createdAt      DateTime @default(now()) @map("created_at")
 
-  user User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
 /// -----------------------
@@ -746,13 +751,34 @@ model ConversionEvent {
 model Setting {
   @@map("settings")
 
-  setting_key   String  @id
-  setting_value String?
-  description   String?
-  label         String  @unique
-  last_set_by   Int?
+  key               String  @id @map("key")
+  value             String? @map("value")
+  description       String? @map("description")
+  label             String  @unique @map("label")
+  lastSetBy         Int?    @map("last_set_by")
+  settingCategoryId Int?    @map("setting_category_id")
 
-  lastSetByUser User? @relation("SettingLastSetBy", fields: [last_set_by], references: [id], onDelete: SetNull)
+  lastSetByUser   User?            @relation("SettingLastSetBy", fields: [lastSetBy], references: [id], onDelete: SetNull)
+  settingCategory SettingCategory? @relation(fields: [settingCategoryId], references: [id], onDelete: SetNull)
+}
+
+/// ------------------------------------------
+/// Категории настроек (setting_categories)
+/// ------------------------------------------
+model SettingCategory {
+  @@map("setting_categories")
+
+  id        Int                @id @default(autoincrement()) @map("id")
+  name      String             @unique @map("name")
+  parentId  Int?               @map("parent_id")
+
+  // Самоссылка — родитель
+  parent     SettingCategory?  @relation("SettingCategoryChildren", fields: [parentId], references: [id])
+  // Обратная связь — подкатегории
+  children   SettingCategory[] @relation("SettingCategoryChildren")
+
+  // Связь с настройками
+  settings   Setting[]
 }
 
 /// -----------------------
@@ -761,28 +787,29 @@ model Setting {
 model Lang {
   @@map("langs")
 
-  id                  Int     @id @default(autoincrement())
-  lang_code           String
-  lang_flag_image_url String?
+  id            Int     @id @default(autoincrement()) @map("id")
+  name          String  @map("name")
+  code          String  @map("code")
+  flagImageUrl  String? @map("flag_image_url")
+  isUsing       Boolean @default(false) @map("is_using")
 
   productReviews ProductReview[]
   translations   Translation[]
 }
-
-/// -----------------------
+/// ----------------------------------
 /// Переводы (translations)
-/// (композитный PK: (id, lang_id))
-/// -----------------------
+/// Композитный PK: (id, lang_id)
+/// ----------------------------------
 model Translation {
   @@map("translations")
 
-  id      Int
-  lang_id Int
-  value   String
+  id      Int    @map("id")
+  langId  Int    @map("lang_id")
+  value   String @map("value")
 
-  lang Lang @relation(fields: [lang_id], references: [id], onDelete: Cascade)
+  lang Lang @relation(fields: [langId], references: [id], onDelete: Cascade)
 
-  @@id([id, lang_id])
+  @@id([id, langId])
 }
 
 /// -----------------------
@@ -791,85 +818,84 @@ model Translation {
 model Promotion {
   @@map("promotions")
 
-  id                Int                           @id @default(autoincrement())
-  name_tx_id        Int
-  description_tx_id Int?
-  promo_code        String?                       @unique
-  discount_type     enum_promotions_discount_type
-  discount_value    Decimal                       @default("0.00") @db.Decimal(10, 2)
-  min_order_amount  Decimal?                      @default("0.00") @db.Decimal(10, 2)
-  start_date        DateTime?
-  end_date          DateTime?
-  usage_limit       Int?
-  times_used        Int                           @default(0)
-  status_id         Int
-  created_at        DateTime                      @default(now())
-  updated_at        DateTime                      @default(now())
+  id               Int                           @id @default(autoincrement()) @map("id")
+  nameTxId         Int                           @map("name_tx_id")
+  descriptionTxId  Int?                          @map("description_tx_id")
+  promoCode        String?                       @unique @map("promo_code")
+  discountType     EnumPromotionsDiscountType @map("discount_type")
+  discountValue    Decimal                       @default("0.00") @db.Decimal(10, 2) @map("discount_value")
+  minOrderAmount   Decimal?                      @default("0.00") @db.Decimal(10, 2) @map("min_order_amount")
+  startDate        DateTime?                     @map("start_date")
+  endDate          DateTime?                     @map("end_date")
+  usageLimit       Int?                          @map("usage_limit")
+  timesUsed        Int                           @default(0) @map("times_used")
+  statusId         Int                           @map("status_id")
+  createdAt        DateTime                      @default(now()) @map("created_at")
+  updatedAt        DateTime                      @default(now()) @map("updated_at")
 
-  status              Status              @relation(fields: [status_id], references: [id], onDelete: Restrict)
+  status              Status              @relation(fields: [statusId], references: [id], onDelete: Restrict)
   promotionProducts   PromotionProduct[]
   promotionCategories PromotionCategory[]
   promotionUsers      PromotionUser[]
   promotionUsages     PromotionUsage[]
 }
 
-/// -----------------------
+/// -------------------------------------
 /// Связка промо - товары (promotion_products)
-/// -----------------------
+/// -------------------------------------
 model PromotionProduct {
   @@map("promotion_products")
 
-  promotion_id Int
-  product_id   Int
+  promotionId Int @map("promotion_id")
+  productId   Int @map("product_id")
 
-  promotion Promotion @relation(fields: [promotion_id], references: [id], onDelete: Cascade)
-  product   Product   @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  @@id([promotion_id, product_id])
+  @@id([promotionId, productId])
 }
-
-/// -----------------------
+/// ----------------------------------------------
 /// Связка промо - категории (promotion_categories)
-/// -----------------------
+/// ----------------------------------------------
 model PromotionCategory {
   @@map("promotion_categories")
 
-  promotion_id Int
-  category_id  Int
+  promotionId Int @map("promotion_id")
+  categoryId  Int @map("category_id")
 
-  promotion Promotion @relation(fields: [promotion_id], references: [id], onDelete: Cascade)
-  category  Category  @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  category  Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  @@id([promotion_id, category_id])
+  @@id([promotionId, categoryId])
 }
 
-/// -----------------------
+/// ------------------------------------------
 /// Связка промо - пользователи (promotion_users)
-/// -----------------------
+/// ------------------------------------------
 model PromotionUser {
   @@map("promotion_users")
 
-  promotion_id Int
-  user_id      Int
+  promotionId Int @map("promotion_id")
+  userId      Int @map("user_id")
 
-  promotion Promotion @relation(fields: [promotion_id], references: [id], onDelete: Cascade)
-  user      User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@id([promotion_id, user_id])
+  @@id([promotionId, userId])
 }
 
-/// -----------------------
+/// ----------------------------
 /// Список желаний (user_wishlists)
-/// -----------------------
+/// ----------------------------
 model UserWishlist {
   @@map("user_wishlists")
 
-  product_id Int
-  user_id    Int
-  created_at DateTime @default(now())
+  productId  Int      @map("product_id")
+  userId     Int      @map("user_id")
+  createdAt  DateTime @default(now()) @map("created_at")
 
-  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@id([product_id, user_id])
+  @@id([productId, userId])
 }

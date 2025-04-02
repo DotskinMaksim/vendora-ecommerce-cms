@@ -11,9 +11,11 @@ export async function POST(req: Request) {
         if (!email || !username || !password) {
             return NextResponse.json({ error: "Missing fields" }, { status: 400 });
         }
+
+        // Используем имена полей, как они определены в Prisma (с заглавными буквами)
         const existingUser = await prisma.user.findFirst({
             where: {
-                OR: [{ email }, { username }],
+                OR: [{ Email: email }, { Username: username }],
             },
         });
 
@@ -21,29 +23,28 @@ export async function POST(req: Request) {
             return NextResponse.json(
                 {
                     error:
-                        existingUser.email === email
+                        existingUser.Email === email
                             ? "Email already in use"
                             : "Username already in use",
                 },
                 { status: 400 }
             );
         }
+
         // Хешируем пароль (например, 10 раундов)
         const hashed = await bcrypt.hash(password, 10);
 
-        // Создаём пользователя
+        // Создаём пользователя, используя корректные имена полей
         const newUser = await prisma.user.create({
             data: {
-                email,
-                username,
-                password_hash: hashed,
-                // Если статус_id не указан, триггер может выставить default_status
-                // Или укажем вручную, если нужно:
-                // status_id: 2 (к примеру, "pending")...
+                Email: email,
+                Username: username,
+                PasswordHash: hashed,
+                // Если нужно, можно указать и статус, например: StatusId: 2,
             },
         });
 
-        return NextResponse.json({ userId: newUser.id }, { status: 201 });
+        return NextResponse.json({ userId: newUser.Id }, { status: 201 });
     } catch (err) {
         console.error(err);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });

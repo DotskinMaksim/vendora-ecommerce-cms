@@ -469,13 +469,13 @@ CREATE TABLE "conversion_events" (
 
 -- CreateTable
 CREATE TABLE "settings" (
-    "setting_key" TEXT NOT NULL,
-    "setting_value" TEXT,
+    "key" TEXT NOT NULL,
+    "value" TEXT,
     "description" TEXT,
     "label" TEXT NOT NULL,
     "last_set_by" INTEGER,
 
-    CONSTRAINT "settings_pkey" PRIMARY KEY ("setting_key")
+    CONSTRAINT "settings_pkey" PRIMARY KEY ("key")
 );
 
 -- CreateTable

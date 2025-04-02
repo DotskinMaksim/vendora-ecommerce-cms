@@ -19,10 +19,10 @@ export const authOptions: NextAuthOptions = {
                 }
                 // 1) Ищем пользователя
                 const user = await prisma.user.findUnique({
-                    where: { email: credentials.email },
+                    where: { Email: credentials.email },
                     include: {
-                        status: true,
-                        userRoles: { include: { role: true } },
+                        Status: true,
+                        UserRoles: { include: { Role: true } },
                     },
                 });
                 if (!user) {
@@ -30,34 +30,34 @@ export const authOptions: NextAuthOptions = {
                 }
 
                 // 2) Проверяем статус
-                if (user.status?.name === "banned" || user.status?.name === "suspended") {
+                if (user.Status?.Name === "banned" || user.Status?.Name === "suspended") {
                     throw new Error("Your account is not allowed to login");
                 }
 
                 // 3) Проверяем пароль
-                const isValid = await bcrypt.compare(credentials.password, user.password_hash);
+                const isValid = await bcrypt.compare(credentials.password, user.PasswordHash);
                 if (!isValid) {
                     await prisma.user.update({
-                        where: { id: user.id },
-                        data: { login_attempts: { increment: 1 } },
+                        where: { Id: user.Id },
+                        data: { LoginAttempts: { increment: 1 } },
                     });
                     throw new Error("Invalid credentials");
                 }
                 // сбросим login_attempts
-                if (user.login_attempts > 0) {
+                if (user.LoginAttempts > 0) {
                     await prisma.user.update({
-                        where: { id: user.id },
-                        data: { login_attempts: 0, last_login_at: new Date() },
+                        where: { Id: user.Id },
+                        data: { LoginAttempts: 0, LastLoginAt: new Date() },
                     });
                 }
 
                 // 4) Возвращаем объект, где id => string
                 return {
-                    id: user.id.toString(),
-                    email: user.email,
-                    username: user.username,
-                    roles: user.userRoles.map((ur) => ur.role.name_tx_id),
-                    status: user.status?.name,
+                    id: user.Id.toString(),
+                    email: user.Email,
+                    username: user.Username,
+                    roles: user.UserRoles.map((ur) => ur.Role.NameTxId),
+                    status: user.Status?.Name,
                 };
             },
         }),

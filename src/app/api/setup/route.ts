@@ -30,8 +30,8 @@ export async function POST(request: Request) {
         await prisma.$transaction(async (tx) => {
             for (const setting of settingsToUpdate) {
                 await tx.setting.update({
-                    where: { setting_key: setting.key },
-                    data: { setting_value: setting.value },
+                    where: { Key: setting.key },
+                    data: { Value: setting.value },
                 });
             }
         });
