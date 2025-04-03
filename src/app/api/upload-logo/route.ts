@@ -1,6 +1,6 @@
 // src/app/api/upload-logo/route.ts
 import { NextResponse } from "next/server";
-import { processLogo } from "@/lib/server/logo-processor";
+import { processLogo } from "@/lib/server/img/logo-processor";
 
 export async function POST(request: Request) {
     try {

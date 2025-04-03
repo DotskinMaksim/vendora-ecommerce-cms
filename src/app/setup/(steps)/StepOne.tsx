@@ -1,27 +1,17 @@
 "use client";
 import React from "react";
-import LabelWithPopover from "@/app/(site)/components/LabelWithPopover";
-import { SettingDto } from "@/dtos/setting.dto";
+import { StepComponentProps } from "@/types/setup";
+import LabelWithPopover from "@/app/components/LabelWithPopover";
 
-interface StepOneProps {
-    siteName: string;
-    contactEmail: string;
-    onSiteNameChange: (value: string) => void;
-    onContactEmailChange: (value: string) => void;
-    error: string;
-    nextStep: () => void;
-    getSetting: (key: string) => SettingDto | undefined;
-}
-
-const StepOne: React.FC<StepOneProps> = ({
-                                             siteName,
-                                             contactEmail,
-                                             onSiteNameChange,
-                                             onContactEmailChange,
-                                             error,
-                                             nextStep,
-                                             getSetting,
-                                         }) => {
+// Now we just use StepComponentProps:
+const StepOne: React.FC<StepComponentProps> = ({
+                                                   siteName,
+                                                   contactEmail,
+                                                   setFormData,
+                                                   error,
+                                                   nextStep,
+                                                   getSetting,
+                                               }) => {
     return (
         <div>
             <div className="mb-4">
@@ -31,10 +21,11 @@ const StepOne: React.FC<StepOneProps> = ({
                 />
                 <input
                     type="text"
-                    required
                     value={siteName}
-                    onChange={(e) => onSiteNameChange(e.target.value)}
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200"
+                    onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, siteName: e.target.value }))
+                    }
+                    className="w-full border rounded px-3 py-2"
                 />
             </div>
             <div className="mb-4">
@@ -44,10 +35,11 @@ const StepOne: React.FC<StepOneProps> = ({
                 />
                 <input
                     type="email"
-                    required
                     value={contactEmail}
-                    onChange={(e) => onContactEmailChange(e.target.value)}
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200"
+                    onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, contactEmail: e.target.value }))
+                    }
+                    className="w-full border rounded px-3 py-2"
                 />
             </div>
             {error && <p className="text-red-600">{error}</p>}
@@ -55,7 +47,7 @@ const StepOne: React.FC<StepOneProps> = ({
                 <button
                     type="button"
                     onClick={nextStep}
-                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                    className="bg-blue-600 text-white px-4 py-2 rounded"
                 >
                     Next
                 </button>

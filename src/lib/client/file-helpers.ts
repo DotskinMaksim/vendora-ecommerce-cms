@@ -1,4 +1,4 @@
-//src/lib/file-helpers.ts
+// src/lib/file-helpers.ts
 export function fileToBase64(file: File) {
     return new Promise<string>((resolve, reject) => {
         const reader = new FileReader();

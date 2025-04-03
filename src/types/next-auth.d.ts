@@ -1,4 +1,4 @@
-// types/next-auth.d.ts
+// src/types/next-auth.d.ts
 import { DefaultUser, DefaultSession } from "next-auth"
 
 declare module "next-auth" {

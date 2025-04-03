@@ -1,110 +1,36 @@
 "use client";
-
 import React, { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import currencyCodes from "currency-codes";
 import moment from "moment-timezone";
 
-// DTO из вашего проекта
 import { SettingDto, SetupDto } from "@/dtos/setting.dto";
+import { fileToBase64 } from "@/lib/client/file-helpers";
 
-// Подкомпоненты шагов (исправьте пути, если нужно)
+// Import the four steps
 import StepOne from "./(steps)/StepOne";
 import StepTwo from "./(steps)/StepTwo";
 import StepThree from "./(steps)/StepThree";
 import StepFour from "./(steps)/StepFour";
 
-// Вспомогательная функция для конвертации файла в Base64
-import { fileToBase64 } from "@/lib/file-helpers";
-
-// Динамический импорт react-select
-const ReactSelect = dynamic(() => import("react-select"), { ssr: false });
+// Импортируем типы из отдельного файла
+import { SetupFormData, StepDefinition } from "@/types/setup";
 
 // -------------------------
-// 1. Типы данных
+// 2. Готовим выбор таймзон и валют
 // -------------------------
-interface SetupFormData {
-    siteName: string;
-    contactEmail: string;
-    timezone: string;
-    currency: string;
-    registrationEnabled: boolean;
-    autoLoginEnabled: boolean;
-    logoMode: "url" | "upload";
-    logoUrl: string;
-    logoFile: File | null;
-}
+const codeList = currencyCodes.codes();
+const currencyOptions = codeList.map((code) => ({ value: code, label: code }));
 
-// Шаг в массиве steps
-interface StepDefinition {
-    component: React.FC<StepComponentProps>;
-    validate: ((data: SetupFormData) => string) | null;
-}
-
-// Пропсы, которые получает каждый <StepX />
-export interface StepComponentProps extends SetupFormData {
-    setFormData: React.Dispatch<React.SetStateAction<SetupFormData>>;
-    error: string;
-    nextStep: () => void;
-    prevStep: () => void;
-    getSetting: (key: string) => SettingDto | undefined;
-}
-
-// Пропсы для StepContainer (если вдруг используете)
-interface StepContainerProps {
-    title?: string;
-    error?: string;
-    children: React.ReactNode;
-    onPrev?: () => void;
-    onNext?: () => void;
-}
+const timeZoneNames = moment.tz.names();
+const timeZoneOptions = timeZoneNames.map((zone) => ({
+    value: zone,
+    label: zone,
+}));
 
 // -------------------------
-// 2. Пример обёртки: StepContainer
-//    (Можно использовать в каждом шаге, если нужно)
-// -------------------------
-function StepContainer({
-                           title,
-                           error,
-                           children,
-                           onPrev,
-                           onNext,
-                       }: StepContainerProps) {
-    return (
-        <div className="mb-6">
-            {title && <h2 className="text-xl font-bold mb-4">{title}</h2>}
-
-            {children /* Тут лежит сам JSX шага */}
-
-            {error && <p className="text-red-600">{error}</p>}
-
-            <div className="flex justify-between mt-6">
-                {onPrev && (
-                    <button
-                        type="button"
-                        onClick={onPrev}
-                        className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                    >
-                        Назад
-                    </button>
-                )}
-                {onNext && (
-                    <button
-                        type="button"
-                        onClick={onNext}
-                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                    >
-                        Вперёд
-                    </button>
-                )}
-            </div>
-        </div>
-    );
-}
-
-// -------------------------
-// 3. Массив шагов и их валидация
+// 3. Шаги и их валидация
 // -------------------------
 const steps: StepDefinition[] = [
     {
@@ -128,43 +54,27 @@ const steps: StepDefinition[] = [
     {
         component: StepThree,
         validate: (data: SetupFormData) => {
-            if (data.logoMode === "upload" && !data.logoFile) {
-                return "Please choose a file or switch to 'URL' mode.";
+            if ((data.logoMode === "upload" && !data.logoFile) || (data.logoMode === "url" && !data.logoUrl) ) {
+                return "Please choose a file or fill in the URL.";
             }
             return "";
         },
     },
     {
         component: StepFour,
-        validate: null, // Если нет отдельной валидации для финального шага
+        validate: null, // No special validation here
     },
 ];
 
 // -------------------------
-// 4. Допом: списки таймзон и валют (если нужны глобально)
-// -------------------------
-const codeList = currencyCodes.codes();
-export const currencyOptions = codeList.map((code) => ({ value: code, label: code }));
-
-const timeZoneNames = moment.tz.names();
-export const timeZoneOptions = timeZoneNames.map((zone) => ({
-    value: zone,
-    label: zone,
-}));
-
-// -------------------------
-// 5. Главный компонент SetupPage
+// 4. Главный компонент SetupPage
 // -------------------------
 export default function SetupPage() {
     const router = useRouter();
-
-    // Сколько всего шагов
     const totalSteps = steps.length;
-
-    // Текущий шаг (1-based)
     const [step, setStep] = useState<number>(1);
 
-    // Все данные формы в одном объекте
+    // Our entire form data in a single object:
     const [formData, setFormData] = useState<SetupFormData>({
         siteName: "",
         contactEmail: "",
@@ -177,11 +87,11 @@ export default function SetupPage() {
         logoFile: null,
     });
 
-    // Ошибки и настройки из БД
+    // We store the error and the settings fetched from DB
     const [error, setError] = useState("");
     const [settingsFromDB, setSettingsFromDB] = useState<SettingDto[]>([]);
 
-    // При загрузке – получить настройки из /api/settings (опционально)
+    // Fetch settings from DB once on mount
     useEffect(() => {
         fetch("/api/settings")
             .then((res) => res.json())
@@ -193,13 +103,12 @@ export default function SetupPage() {
         return settingsFromDB.find((s) => s.key === settingKey);
     }
 
-    // Кнопка "Далее"
     function nextStep() {
         setError("");
-        const currentStepIndex = step - 1; // 0-based
-        const validationFn = steps[currentStepIndex].validate;
-        if (validationFn) {
-            const validationError = validationFn(formData);
+        const currentStepIndex = step - 1;
+        const validateFn = steps[currentStepIndex]?.validate;
+        if (validateFn) {
+            const validationError = validateFn(formData);
             if (validationError) {
                 setError(validationError);
                 return;
@@ -208,20 +117,17 @@ export default function SetupPage() {
         setStep((prev) => prev + 1);
     }
 
-    // Кнопка "Назад"
     function prevStep() {
         setError("");
         setStep((prev) => prev - 1);
     }
 
-    // Вспомогательная функция для загрузки логотипа
+    // Logic for uploading / storing the logo
     async function processLogoForSubmit(data: SetupFormData): Promise<string> {
-        const { logoMode, logoUrl, logoFile } = data;
-
-        if (logoMode === "url") {
-            return logoUrl;
-        } else if (logoMode === "upload" && logoFile) {
-            const base64 = await fileToBase64(logoFile);
+        if (data.logoMode === "url") {
+            return data.logoUrl;
+        } else if (data.logoMode === "upload" && data.logoFile) {
+            const base64 = await fileToBase64(data.logoFile);
             const res = await fetch("/api/upload-logo", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -237,25 +143,13 @@ export default function SetupPage() {
         return "";
     }
 
-    // Сабмит (вызывается на последнем шаге)
+    // Called on the final step
     async function handleSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
         setError("");
 
-        const {
-            siteName,
-            contactEmail,
-            timezone,
-            currency,
-            registrationEnabled,
-            autoLoginEnabled,
-            logoMode,
-            logoUrl,
-            logoFile,
-        } = formData;
-
-        let finalLogoUrl = logoUrl;
-        if (logoMode === "upload") {
+        let finalLogoUrl = formData.logoUrl;
+        if (formData.logoMode === "upload") {
             try {
                 finalLogoUrl = await processLogoForSubmit(formData);
             } catch (err: any) {
@@ -264,14 +158,13 @@ export default function SetupPage() {
             }
         }
 
-        // DTO для отправки
         const payload: SetupDto = {
-            siteName,
-            contactEmail,
-            timezone,
-            currency,
-            isRegistrationEnabled: registrationEnabled,
-            autoLoginEnabled,
+            siteName: formData.siteName,
+            contactEmail: formData.contactEmail,
+            timezone: formData.timezone,
+            currency: formData.currency,
+            isRegistrationEnabled: formData.registrationEnabled,
+            autoLoginEnabled: formData.autoLoginEnabled,
             logoUrl: finalLogoUrl,
         };
 
@@ -286,20 +179,16 @@ export default function SetupPage() {
             setError(msg || "Error saving data");
             return;
         }
-
         router.push("/");
     }
 
-    // Определяем, какой шаг рендерить
     const currentStepIndex = step - 1;
     const CurrentStepComponent = steps[currentStepIndex].component;
-
-    // Прогресс (от 0 до 100%)
     const progressPercent = (step / totalSteps) * 100;
 
     return (
         <main className="max-w-xl mx-auto p-6">
-            {/* Полоса прогресса */}
+            {/* Progress bar */}
             <div className="w-full bg-gray-200 h-2 rounded mb-4">
                 <div
                     className="bg-blue-600 h-2 rounded"
@@ -312,10 +201,8 @@ export default function SetupPage() {
                     Initial Site Setup
                 </h1>
 
-                {/* Если это последний шаг, делаем сабмит формы */}
-                {/* Иначе рендерим просто контент + кнопки */}
                 {step === totalSteps ? (
-                    // Последний шаг: оборачиваем в form, вызываем handleSubmit
+                    // On the last step, we wrap in <form> so we can submit
                     <form onSubmit={handleSubmit}>
                         <CurrentStepComponent
                             {...formData}
@@ -324,10 +211,12 @@ export default function SetupPage() {
                             nextStep={nextStep}
                             prevStep={prevStep}
                             getSetting={getSetting}
+                            timeZoneOptions={timeZoneOptions}
+                            currencyOptions={currencyOptions}
                         />
                     </form>
                 ) : (
-                    // Промежуточные шаги: обычный div + кнопки «Вперёд/Назад» внутри компонента
+                    // On earlier steps, just a normal div
                     <div>
                         <CurrentStepComponent
                             {...formData}
@@ -336,6 +225,8 @@ export default function SetupPage() {
                             nextStep={nextStep}
                             prevStep={prevStep}
                             getSetting={getSetting}
+                            timeZoneOptions={timeZoneOptions}
+                            currencyOptions={currencyOptions}
                         />
                     </div>
                 )}

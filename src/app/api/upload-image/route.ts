@@ -1,6 +1,6 @@
 // src/app/api/upload-image/route.ts
 import { NextResponse } from "next/server";
-import { processGenericImage } from "@/lib/server/image-processor";
+import { processGenericImage } from "@/lib/server/img/image-processor";
 
 export async function POST(request: Request) {
     try {

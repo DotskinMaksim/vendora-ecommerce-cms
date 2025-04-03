@@ -1,9 +1,8 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/server/prisma";
 import bcrypt from "bcrypt";
 
-// Настройки NextAuth
 export const authOptions: NextAuthOptions = {
     secret: process.env.NEXTAUTH_SECRET,
     providers: [
@@ -17,47 +16,56 @@ export const authOptions: NextAuthOptions = {
                 if (!credentials?.email || !credentials.password) {
                     throw new Error("Email and password required");
                 }
-                // 1) Ищем пользователя
+
+                // Ищем пользователя по полю `email` (в схеме: user.email)
                 const user = await prisma.user.findUnique({
-                    where: { Email: credentials.email },
+                    where: { email: credentials.email },
                     include: {
-                        Status: true,
-                        UserRoles: { include: { Role: true } },
+                        // Поле `status` вместо `Status`
+                        status: true,
+                        // Поле `userRoles` вместо `UserRoles`
+                        userRoles: { include: { role: true } },
                     },
                 });
                 if (!user) {
                     throw new Error("No user found");
                 }
 
-                // 2) Проверяем статус
-                if (user.Status?.Name === "banned" || user.Status?.Name === "suspended") {
+                // Проверка статуса: user.status?.name
+                if (user.status?.name === "banned" || user.status?.name === "suspended") {
                     throw new Error("Your account is not allowed to login");
                 }
 
-                // 3) Проверяем пароль
-                const isValid = await bcrypt.compare(credentials.password, user.PasswordHash);
+                // Сравниваем пароль (user.passwordHash)
+                const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
                 if (!isValid) {
+                    // Увеличиваем счётчик loginAttempts
                     await prisma.user.update({
-                        where: { Id: user.Id },
-                        data: { LoginAttempts: { increment: 1 } },
+                        where: { id: user.id }, // поле `id` (строчной)
+                        data: { loginAttempts: { increment: 1 } }, // поле `loginAttempts`
                     });
                     throw new Error("Invalid credentials");
                 }
-                // сбросим login_attempts
-                if (user.LoginAttempts > 0) {
+
+                // сбрасываем loginAttempts
+                if (user.loginAttempts > 0) {
                     await prisma.user.update({
-                        where: { Id: user.Id },
-                        data: { LoginAttempts: 0, LastLoginAt: new Date() },
+                        where: { id: user.id },
+                        data: {
+                            loginAttempts: 0,
+                            lastLoginAt: new Date(), // поле `lastLoginAt`
+                        },
                     });
                 }
 
-                // 4) Возвращаем объект, где id => string
+                // Возвращаем объект для jwt
                 return {
-                    id: user.Id.toString(),
-                    email: user.Email,
-                    username: user.Username,
-                    roles: user.UserRoles.map((ur) => ur.Role.NameTxId),
-                    status: user.Status?.Name,
+                    id: user.id.toString(),
+                    email: user.email,
+                    username: user.username,
+                    // теперь user.userRoles -> ur.role (строчные)
+                    roles: user.userRoles.map((ur) => ur.role.nameTxId),
+                    status: user.status?.name,
                 };
             },
         }),
@@ -90,8 +98,3 @@ export const authOptions: NextAuthOptions = {
         signIn: "/login",
     },
 };
-
-import NextAuth from "next-auth";
-
-const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };

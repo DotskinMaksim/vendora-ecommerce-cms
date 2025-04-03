@@ -1,6 +1,6 @@
-// app/api/verify-email/route.ts
+// drc/app/api/verify-email/route.ts
 import {NextResponse} from "next/server";
-import {prisma} from "@/lib/prisma";
+import {prisma} from "@/lib/server/prisma";
 
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url)
@@ -9,22 +9,20 @@ export async function GET(req: Request) {
 
     const user = await prisma.user.findFirst({
         where: {
-            EmailVerificationToken: token,
-            EmailVerificationExpires: { gt: new Date() },
-        }
-    })
+            emailVerificationToken: token,            // строчное название
+            emailVerificationExpires: { gt: new Date() },
+        },
+    });
     if (!user) {
-        return NextResponse.json({ error: "Token invalid or expired" }, { status: 400 })
+        return NextResponse.json({ error: "Token invalid or expired" }, { status: 400 });
     }
-
-    // Помечаем как verify
     await prisma.user.update({
-        where: { Id: user.Id },
+        where: { id: user.id }, // строчное
         data: {
-            EmailVerified: true,
-            EmailVerificationToken: null,
-            EmailVerificationExpires: null,
-        }
-    })
+            emailVerified: true,            // строчное
+            emailVerificationToken: null,
+            emailVerificationExpires: null,
+        },
+    });
     return NextResponse.json({ message: "Email verified" })
 }

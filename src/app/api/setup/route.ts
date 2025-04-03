@@ -1,7 +1,7 @@
-// app/api/setup/route.ts
+// src/app/api/setup/route.ts
 
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/server/prisma";
 import { SetupDto } from "@/dtos/setting.dto";
 
 export async function POST(request: Request) {
@@ -28,10 +28,10 @@ export async function POST(request: Request) {
         ];
 
         await prisma.$transaction(async (tx) => {
-            for (const setting of settingsToUpdate) {
+            for (const item of settingsToUpdate) {
                 await tx.setting.update({
-                    where: { Key: setting.key },
-                    data: { Value: setting.value },
+                    where: { key: item.key },     // строчное
+                    data: { value: item.value },  // строчное
                 });
             }
         });
