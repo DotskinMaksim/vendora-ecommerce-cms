@@ -91,7 +91,7 @@ const data = {
     settings: [
         // --- 1. Global site configuration settings ---
         {
-            key: "is_set_up",
+            key: "setup_completed",
             value: "false",
             label: "Is site set up",
             description: "Flag indicating whether the initial site setup has been completed. True means the site is fully configured."
@@ -318,7 +318,7 @@ const settingCategories = [
     {
         name: "Global site configuration",
         keys: [
-            "is_set_up",
+            "setup_completed",
             "site_name",
             "default_lang_id",
             "timezone",

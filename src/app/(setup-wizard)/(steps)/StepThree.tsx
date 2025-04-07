@@ -1,7 +1,7 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { StepComponentProps } from "@/types/setup";
-import LabelWithPopover from "@/app/components/LabelWithPopover";
+import LabelWithPopover from "@/components/LabelWithPopover";
 
 const StepThree: React.FC<StepComponentProps> = ({
                                                      logoMode,
@@ -13,13 +13,17 @@ const StepThree: React.FC<StepComponentProps> = ({
                                                      prevStep,
                                                      getSetting,
                                                  }) => {
+    // Локальная ошибка для загружаемого файла
+    const [localError, setLocalError] = useState("");
+
     return (
         <div>
             <div className="mb-4">
                 <LabelWithPopover
                     label={"Site logo"}
-                    description={"The site logo displayed in the header and other branding areas."}
-                />                <p className="text-sm text-gray-600 mb-2">
+                    description={"Logo displayed in the header and other branding areas."}
+                />
+                <p className="text-sm text-gray-600 mb-2">
                     Choose to use an existing image URL or upload a file.
                 </p>
                 <div className="mb-2">
@@ -33,8 +37,7 @@ const StepThree: React.FC<StepComponentProps> = ({
                                 setFormData((prev) => ({
                                     ...prev,
                                     logoMode: "url",
-                                    // If switching to URL mode, you may want to clear out logoFile:
-                                    logoFile: null,
+                                    logoFile: null, // Если переключаемся обратно, очищаем файл
                                 }))
                             }
                         />
@@ -50,8 +53,7 @@ const StepThree: React.FC<StepComponentProps> = ({
                                 setFormData((prev) => ({
                                     ...prev,
                                     logoMode: "upload",
-                                    // Possibly clear out logoUrl if you want:
-                                    logoUrl: "",
+                                    logoUrl: "", // Если переключаемся на upload, очищаем URL
                                 }))
                             }
                         />
@@ -79,6 +81,15 @@ const StepThree: React.FC<StepComponentProps> = ({
                             onChange={(e) => {
                                 if (e.target.files?.[0]) {
                                     const file = e.target.files[0];
+                                    // 1) Проверяем размер (пример: лимит 2MB)
+                                    if (file.size > 2 * 1024 * 1024) {
+                                        setLocalError("File size exceeds 2 MB limit");
+                                        return; // не записываем в formData
+                                    } else {
+                                        setLocalError("");
+                                    }
+
+                                    // 2) Если всё ок — кладём файл в formData
                                     setFormData((prev) => ({ ...prev, logoFile: file }));
                                 }
                             }}
@@ -86,7 +97,8 @@ const StepThree: React.FC<StepComponentProps> = ({
                     </div>
                 )}
 
-                {logoUrl && (
+                {/* Превью (только для режима URL) */}
+                {logoMode === "url" && logoUrl && (
                     <div className="mt-3">
                         <p className="text-sm text-gray-700">Preview:</p>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -99,7 +111,12 @@ const StepThree: React.FC<StepComponentProps> = ({
                 )}
             </div>
 
+            {/* Выводим локальную ошибку, если есть */}
+            {localError && <p className="text-red-600">{localError}</p>}
+
+            {/* Также может быть общий error из родителя */}
             {error && <p className="text-red-600">{error}</p>}
+
             <div className="flex justify-between mt-6">
                 <button
                     type="button"

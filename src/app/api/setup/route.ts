@@ -23,8 +23,8 @@ export async function POST(request: Request) {
             },
             // Новая настройка (logo_url)
             { key: "logo_url", value: body.logoUrl || "" },
-            // Устанавливаем is_set_up
-            { key: "is_set_up", value: "true" },
+            // Устанавливаем setup_completed
+            { key: "setup_completed", value: "true" },
         ];
 
         await prisma.$transaction(async (tx) => {

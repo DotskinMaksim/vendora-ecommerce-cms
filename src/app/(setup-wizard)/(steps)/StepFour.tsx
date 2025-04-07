@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { StepComponentProps } from "@/types/setup";
-import LabelWithPopover from "@/app/components/LabelWithPopover";
+import LabelWithPopover from "@/components/LabelWithPopover";
 
 // Notice we no longer have "handleSubmit" prop.
 // The final step is wrapped in <form> at the parent level.

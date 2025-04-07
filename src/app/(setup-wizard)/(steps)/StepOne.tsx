@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { StepComponentProps } from "@/types/setup";
-import LabelWithPopover from "@/app/components/LabelWithPopover";
+import LabelWithPopover from "@/components/LabelWithPopover";
 
 // Now we just use StepComponentProps:
 const StepOne: React.FC<StepComponentProps> = ({

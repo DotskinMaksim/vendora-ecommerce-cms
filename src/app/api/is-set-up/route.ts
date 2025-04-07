@@ -7,7 +7,7 @@ export async function GET() {
     // тут можно safely использовать prisma
     // GET /api/is-set-up
     const isSetUp = await prisma.setting.findUnique({
-        where: { key: "is_set_up" },    // поле "key" строчными
+        where: { key: "setup_completed" },    // поле "key" строчными
     });
     if (isSetUp?.value !== "true") {   // поле "value" строчными
         return NextResponse.json({ isSetUp: false }, { status: 404 });

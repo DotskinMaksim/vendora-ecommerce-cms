@@ -2,7 +2,7 @@
 import React from "react";
 import { StepComponentProps } from "@/types/setup";
 import dynamic from "next/dynamic";
-import LabelWithPopover from "@/app/components/LabelWithPopover";
+import LabelWithPopover from "@/components/LabelWithPopover";
 
 const ReactSelect = dynamic(() => import("react-select"), { ssr: false });
 

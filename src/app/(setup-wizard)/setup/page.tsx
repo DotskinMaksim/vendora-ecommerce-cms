@@ -9,10 +9,10 @@ import { SettingDto, SetupDto } from "@/dtos/setting.dto";
 import { fileToBase64 } from "@/lib/client/file-helpers";
 
 // Import the four steps
-import StepOne from "./(steps)/StepOne";
-import StepTwo from "./(steps)/StepTwo";
-import StepThree from "./(steps)/StepThree";
-import StepFour from "./(steps)/StepFour";
+import StepOne from "@/app/(setup-wizard)/(steps)/StepOne";
+import StepTwo from "@/app/(setup-wizard)/(steps)/StepTwo";
+import StepThree from "@/app/(setup-wizard)/(steps)/StepThree";
+import StepFour from "@/app/(setup-wizard)/(steps)/StepFour";
 
 // Импортируем типы из отдельного файла
 import { SetupFormData, StepDefinition } from "@/types/setup";
